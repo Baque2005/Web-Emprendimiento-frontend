@@ -1,137 +1,232 @@
-import React, { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Star } from 'lucide-react';
-const MOCK_PRODUCTS = [
-  { id: 1, name: "Eco-Cuaderno Universitario", price: 12.50, category: "Papelería", rating: 4.8, img: "https://images.unsplash.com/photo-1531346878377-a5be20888e57?w=400" },
-  { id: 2, name: "Termo Acero Inoxidable", price: 25.00, category: "Accesorios", rating: 4.5, img: "https://images.unsplash.com/photo-1517254456976-ee8682099819?w=400" },
-  { id: 3, name: "Mochila Ergonómica", price: 45.00, category: "Textil", rating: 4.9, img: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400" },
-  { id: 4, name: "Lámpara de Escritorio LED", price: 18.99, category: "Tecnología", rating: 4.2, img: "https://images.unsplash.com/photo-1534073828943-f801091bb18c?w=400" },
-];
+import { useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Layout } from '@/components/layout/Layout';
+import { ProductCard } from '@/components/catalog/ProductCard';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Slider } from '@/components/ui/slider';
+import { categories } from '@/data/mockData';
+import { useApp } from '@/context/AppContext';
+import { Search, SlidersHorizontal, X } from 'lucide-react';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 
-const categories = [
-  "Todos",
-  "Papelería",
-  "Accesorios",
-  "Textil",
-  "Tecnología",
-  "Hogar",
-  "Belleza",
-  "Deportes",
-  "Alimentos",
-  "Juguetes",
-  "Arte",
-  "Salud",
-  "Electrodomésticos",
-  "Mascotas",
-  "Libros",
-  "Ropa",
-  "Calzado",
-  "Jardinería"
-];
+const Catalog = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { products } = useApp();
+  
+  const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(
+    searchParams.get('category')
+  );
+  const [priceRange, setPriceRange] = useState([0, 50]);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-export const Catalog = () => {
-  const [filter, setFilter] = useState("Todos");
-  const [search, setSearch] = useState("");
-  const [open, setOpen] = useState(false);
-  const dropdownRef = useRef(null);
-  const navigate = useNavigate();
-  const filteredProducts = MOCK_PRODUCTS.filter(p => {
-    const matchesCategory = filter === "Todos" ? true : p.category === filter;
-    const matchesName = p.name.toLowerCase().includes(search.toLowerCase());
-    return matchesCategory && matchesName;
-  });
+  const filteredProducts = useMemo(() => {
+    return products.filter(product => {
+      const matchesSearch = product.name.toLowerCase().includes(search.toLowerCase()) ||
+        product.description.toLowerCase().includes(search.toLowerCase());
+      const matchesCategory = !selectedCategory || product.category === selectedCategory;
+      const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
+      return matchesSearch && matchesCategory && matchesPrice;
+    });
+  }, [products, search, selectedCategory, priceRange]);
 
-  // Cerrar el menú si se hace clic fuera
-  React.useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setOpen(false);
-      }
-    }
-    if (open) {
-      document.addEventListener("mousedown", handleClickOutside);
+  const handleCategorySelect = (categoryId) => {
+    setSelectedCategory(categoryId);
+    if (categoryId) {
+      setSearchParams({ category: categoryId });
     } else {
-      document.removeEventListener("mousedown", handleClickOutside);
+      setSearchParams({});
     }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [open]);
+  };
+
+  const clearFilters = () => {
+    setSearch('');
+    setSelectedCategory(null);
+    setPriceRange([0, 50]);
+    setSearchParams({});
+  };
+
+  const activeFiltersCount = [
+    selectedCategory,
+    priceRange[0] > 0 || priceRange[1] < 50,
+  ].filter(Boolean).length;
 
   return (
-    <div className="px-2 sm:px-4 md:px-8 py-6 max-w-7xl mx-auto space-y-8 w-full">
-      <div className="flex flex-col gap-6 md:gap-8 w-full">
-        <div className="flex flex-col gap-2 w-full md:w-auto">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 text-center md:text-left">Catálogo de Productos</h2>
-          <p className="text-gray-500 text-center md:text-left">Apoya el emprendimiento local universitario</p>
-        </div>
-        <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full items-center justify-between">
-          {/* Dropdown de categorías */}
-          <div className="relative w-full md:w-auto flex-shrink-0" ref={dropdownRef}>
-            <button
-              type="button"
-              className="w-full md:w-56 flex items-center justify-between px-5 py-2 rounded-lg border-2 border-indigo-500 bg-white text-base font-medium text-gray-700 shadow-sm hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-              onClick={() => setOpen((v) => !v)}
-              aria-haspopup="listbox"
-              aria-expanded={open}
-            >
-              <span className="truncate">{filter}</span>
-              <svg className={`w-5 h-5 ml-2 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            {open && (
-              <ul className="absolute z-20 mt-2 w-full md:w-56 max-h-64 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg animate-fade-in">
-                {categories.map(cat => (
-                  <li
-                    key={cat}
-                    className={`px-5 py-2 cursor-pointer text-base transition-colors ${
-                      filter === cat ? 'bg-indigo-600 text-white font-semibold' : 'hover:bg-indigo-50 text-gray-700'
-                    }`}
-                    onClick={() => {
-                      setFilter(cat);
-                      setOpen(false);
-                    }}
-                  >
-                    {cat}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-          {/* Buscador */}
-          <div className="w-full md:w-72 flex-shrink-0">
-            <input
-              type="text"
-              placeholder="Buscar producto..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-base"
-            />
-          </div>
-        </div>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {filteredProducts.map(product => (
-          <div key={product.id} className="group cursor-pointer" onClick={() => navigate(`/producto/${product.id}`)}>
-            <div className="bg-gray-200 rounded-2xl overflow-hidden aspect-square mb-3 relative">
-              <img src={product.img} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-              <div className="absolute top-3 right-3 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-xs font-bold text-gray-800 shadow-sm flex items-center gap-1">
-                <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" /> {product.rating}
+    <Layout>
+      <div className="min-h-screen bg-background">
+        {/* Header */}
+        <div className="bg-muted/30 py-8">
+          <div className="container">
+            <h1 className="font-display text-3xl font-bold mb-2">
+              Catálogo de Productos
+            </h1>
+            <p className="text-muted-foreground">
+              Descubre productos únicos de emprendedores universitarios
+            </p>
+
+            {/* Search and Filters */}
+            <div className="flex flex-col sm:flex-row gap-4 mt-6">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar productos..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-10"
+                />
               </div>
-            </div>
-            <h3 className="font-bold text-gray-900 leading-tight mb-1 group-hover:text-indigo-600 transition-colors">{product.name}</h3>
-            <p className="text-sm text-gray-500 mb-2">{product.category}</p>
-            <div className="flex items-center justify-between">
-              <span className="text-lg font-extrabold text-indigo-700">${product.price.toFixed(2)}</span>
-              {/* Puedes agregar botón de compra aquí */}
+              <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" className="relative">
+                    <SlidersHorizontal className="h-4 w-4 mr-2" />
+                    Filtros
+                    {activeFiltersCount > 0 && (
+                      <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center bg-primary">
+                        {activeFiltersCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </SheetTrigger>
+                <SheetContent>
+                  <SheetHeader>
+                    <SheetTitle>Filtros</SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-6 space-y-6">
+                    {/* Price Range */}
+                    <div>
+                      <h4 className="font-medium mb-4">Rango de Precio</h4>
+                      <Slider
+                        value={priceRange}
+                        onValueChange={setPriceRange}
+                        max={50}
+                        step={1}
+                        className="mb-2"
+                      />
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>${priceRange[0]}</span>
+                        <span>${priceRange[1]}</span>
+                      </div>
+                    </div>
+
+                    {/* Categories in filter */}
+                    <div>
+                      <h4 className="font-medium mb-4">Categorías</h4>
+                      <div className="space-y-2">
+                        {categories.map(category => (
+                          <button
+                            key={category.id}
+                            onClick={() => handleCategorySelect(
+                              selectedCategory === category.id ? null : category.id
+                            )}
+                            className={`w-full flex items-center gap-2 p-2 rounded-lg text-left transition-colors ${
+                              selectedCategory === category.id
+                                ? 'bg-primary text-primary-foreground'
+                                : 'hover:bg-muted'
+                            }`}
+                          >
+                            <category.icon className="h-4 w-4" aria-hidden="true" />
+                            <span className="text-sm">{category.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Button variant="outline" className="w-full" onClick={clearFilters}>
+                      Limpiar Filtros
+                    </Button>
+                  </div>
+                </SheetContent>
+              </Sheet>
             </div>
           </div>
-        ))}
+        </div>
+
+        {/* Category Pills */}
+        <div className="container py-6">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            <Button
+              variant={selectedCategory === null ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleCategorySelect(null)}
+            >
+              Todos
+            </Button>
+            {categories.map(category => (
+              <Button
+                key={category.id}
+                variant={selectedCategory === category.id ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleCategorySelect(category.id)}
+                className="whitespace-nowrap"
+              >
+                <category.icon className="h-4 w-4" aria-hidden="true" />
+                {category.name}
+              </Button>
+            ))}
+          </div>
+
+          {/* Active Filters Display */}
+          {(selectedCategory || search) && (
+            <div className="flex flex-wrap gap-2 mt-4">
+              {selectedCategory && (
+                <Badge variant="secondary" className="gap-1">
+                  {categories.find(c => c.id === selectedCategory)?.name}
+                  <button onClick={() => handleCategorySelect(null)}>
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              {search && (
+                <Badge variant="secondary" className="gap-1">
+                  Búsqueda: {search}
+                  <button onClick={() => setSearch('')}>
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Products Grid */}
+        <div className="container pb-16">
+          {filteredProducts.length > 0 ? (
+            <>
+              <p className="text-sm text-muted-foreground mb-6">
+                {filteredProducts.length} productos encontrados
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredProducts.map((product, index) => (
+                  <ProductCard key={product.id} product={product} index={index} />
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-16">
+              <div className="text-6xl mb-4">🔍</div>
+              <h3 className="font-display text-xl font-bold mb-2">
+                No se encontraron productos
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                Intenta con otros términos de búsqueda o filtros
+              </p>
+              <Button variant="outline" onClick={clearFilters}>
+                Limpiar Filtros
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
-      {filteredProducts.length === 0 && (
-        <div className="text-center text-gray-500 py-12 text-lg">No se encontraron productos.</div>
-      )}
-    </div>
+    </Layout>
   );
-}
+};
+
+export default Catalog;
