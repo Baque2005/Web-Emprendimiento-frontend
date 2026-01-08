@@ -17,18 +17,17 @@ export const OnboardingModal = () => {
   const [isOpen, setIsOpen] = useState(!isOnboardingComplete);
 
   const handleNext = () => {
-    if (currentStep < onboardingSteps.length - 1) {
-      setCurrentStep(prev => prev + 1);
-    } else {
+    if (currentStep >= onboardingSteps.length - 1) {
       completeOnboarding();
       setIsOpen(false);
+      return;
     }
+
+    setCurrentStep((prev) => Math.min(prev + 1, onboardingSteps.length - 1));
   };
 
   const handleBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep(prev => prev - 1);
-    }
+    setCurrentStep((prev) => Math.max(prev - 1, 0));
   };
 
   const handleSkip = () => {
@@ -36,7 +35,8 @@ export const OnboardingModal = () => {
     setIsOpen(false);
   };
 
-  const step = onboardingSteps[currentStep];
+  const safeIndex = Math.min(currentStep, onboardingSteps.length - 1);
+  const step = onboardingSteps[safeIndex];
   const StepIcon = step.icon;
 
   return (
