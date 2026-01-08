@@ -51,6 +51,7 @@ function hslCssVarToHexInt(varName, fallbackHexInt) {
 
 export default function VantaHaloBackground({ className = '' }) {
   const containerRef = useRef(null);
+  const effectRef = useRef(null);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -83,14 +84,30 @@ export default function VantaHaloBackground({ className = '' }) {
         backgroundColor: primary,
         baseColor: accent,
       });
+
+      effectRef.current = effect;
     };
 
     init();
 
     return () => {
       cancelled = true;
-      if (effect && typeof effect.destroy === 'function') {
-        effect.destroy();
+      const toDestroy = effectRef.current || effect;
+      effectRef.current = null;
+
+      if (toDestroy && typeof toDestroy.destroy === 'function') {
+        try {
+          toDestroy.destroy();
+        } catch {
+          // Vanta puede lanzar NotFoundError si el canvas ya fue removido.
+        }
+      }
+
+      // Asegura que no queden nodos colgando; replaceChildren no lanza.
+      if (el && typeof el.replaceChildren === 'function') {
+        el.replaceChildren();
+      } else if (el) {
+        el.innerHTML = '';
       }
     };
   }, []);

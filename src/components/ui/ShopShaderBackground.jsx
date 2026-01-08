@@ -126,8 +126,12 @@ export default function ShopShaderBackground({ className = '' }) {
     renderer.domElement.style.display = 'block';
 
     // Ensure we start clean if React remounts quickly
-    container.innerHTML = '';
-    container.appendChild(renderer.domElement);
+    if (typeof container.replaceChildren === 'function') {
+      container.replaceChildren(renderer.domElement);
+    } else {
+      container.innerHTML = '';
+      container.appendChild(renderer.domElement);
+    }
 
     const setSize = () => {
       const rect = container.getBoundingClientRect();
@@ -182,8 +186,14 @@ export default function ShopShaderBackground({ className = '' }) {
       material.dispose();
       renderer.dispose();
 
-      if (renderer.domElement?.parentNode === container) {
-        container.removeChild(renderer.domElement);
+      // remove() es seguro aunque ya no esté en el DOM.
+      renderer.domElement?.remove?.();
+
+      // Limpieza final del contenedor sin removeChild.
+      if (typeof container.replaceChildren === 'function') {
+        container.replaceChildren();
+      } else {
+        container.innerHTML = '';
       }
     };
   }, []);
