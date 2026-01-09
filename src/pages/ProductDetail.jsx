@@ -288,35 +288,39 @@ const ProductDetail = () => {
               </div>
 
               {/* Actions */}
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
                 <Button
                   variant="hero"
                   size="lg"
-                  className="flex-1"
+                  className="w-full sm:flex-1"
                   onClick={handleAddToCart}
                   disabled={product.stock === 0}
                 >
                   <ShoppingCart className="h-5 w-5" />
                   Agregar al Carrito
                 </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={handleContact}
-                >
-                  <MessageCircle className="h-5 w-5" />
-                  Contactar
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="lg"
-                  asChild
-                >
+
+                <div className="flex gap-3 sm:gap-4">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="flex-1 sm:flex-none"
+                    onClick={handleContact}
+                  >
+                    <MessageCircle className="h-5 w-5" />
+                    Contactar
+                  </Button>
+
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button type="button" aria-label="Compartir producto">
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        className="px-4"
+                        aria-label="Compartir producto"
+                      >
                         <Share2 className="h-5 w-5" />
-                      </button>
+                      </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56">
                       <DropdownMenuLabel>Compartir</DropdownMenuLabel>
@@ -398,7 +402,7 @@ const ProductDetail = () => {
                       )}
                     </DropdownMenuContent>
                   </DropdownMenu>
-                </Button>
+                </div>
               </div>
 
               {/* Total */}

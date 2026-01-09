@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,7 +46,7 @@ const faculties = [
 
 const Register = () => {
   const navigate = useNavigate();
-  const { setUser, addBusiness } = useApp();
+  const { user, setUser, upsertUser, addBusiness } = useApp();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState(1);
@@ -63,10 +63,39 @@ const Register = () => {
     instagram: '',
   });
 
+  const isUpgradeFlow = !!user && user.role === 'customer';
+
+  useEffect(() => {
+    if (!user) return;
+
+    if (user.role === 'admin') {
+      navigate('/admin');
+      return;
+    }
+
+    if (user.role === 'entrepreneur') {
+      navigate('/dashboard');
+      return;
+    }
+
+    if (user.role === 'customer') {
+      setAccountType('entrepreneur');
+      setStep(3);
+      setFormData((prev) => ({
+        ...prev,
+        name: user.name || '',
+        email: user.email || '',
+        password: '',
+        phone: user.phone || '',
+        faculty: user.faculty || '',
+      }));
+    }
+  }, [user, navigate]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.email || !formData.password) {
+    if (!formData.name || !formData.email || (!isUpgradeFlow && !formData.password)) {
       toast.error('Por favor completa todos los campos requeridos');
       return;
     }
@@ -81,15 +110,27 @@ const Register = () => {
 
     const businessId = accountType === 'entrepreneur' ? `b${Date.now()}` : undefined;
 
-    const newUser = {
-      id: `u${Date.now()}`,
-      name: formData.name,
-      email: formData.email,
-      role: accountType,
-      businessId,
-    };
+    const nextUser = isUpgradeFlow
+      ? {
+          ...user,
+          role: 'entrepreneur',
+          businessId,
+          name: formData.name,
+          phone: formData.phone || '',
+          faculty: formData.faculty || '',
+        }
+      : {
+          id: `u${Date.now()}`,
+          name: formData.name,
+          email: formData.email,
+          role: accountType,
+          businessId,
+          phone: formData.phone || '',
+          faculty: formData.faculty || '',
+        };
 
-    setUser(newUser);
+    setUser(nextUser);
+    upsertUser(nextUser);
 
     if (accountType === 'entrepreneur' && businessId) {
       addBusiness({
@@ -99,10 +140,10 @@ const Register = () => {
         logo: 'https://images.unsplash.com/photo-1520975916090-3105956dac38?w=200&h=200&fit=crop',
         banner: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&h=300&fit=crop',
         category: formData.businessCategory,
-        owner: formData.name,
-        faculty: formData.faculty || 'Universidad de Guayaquil',
-        phone: formData.phone || '',
-        email: formData.email,
+        owner: nextUser.name,
+        faculty: nextUser.faculty || 'Universidad de Guayaquil',
+        phone: nextUser.phone || '',
+        email: nextUser.email,
         instagram: formData.instagram || '',
         rating: 0,
         totalSales: 0,
@@ -139,15 +180,20 @@ const Register = () => {
           </Link>
 
           <div>
-            <h1 className="font-display text-3xl font-bold">Crear Cuenta</h1>
+            <h1 className="font-display text-3xl font-bold">{isUpgradeFlow ? 'Registrar Negocio' : 'Crear Cuenta'}</h1>
             <p className="text-muted-foreground mt-2">
-              {step === 1 ? 'Elige el tipo de cuenta que deseas crear' : 
-               step === 2 ? 'Completa tu información personal' : 
-               'Información de tu negocio'}
+              {isUpgradeFlow
+                ? 'Completa la información de tu negocio'
+                : step === 1
+                  ? 'Elige el tipo de cuenta que deseas crear'
+                  : step === 2
+                    ? 'Completa tu información personal'
+                    : 'Información de tu negocio'}
             </p>
           </div>
 
-          <div className="flex gap-2">
+          {!isUpgradeFlow && (
+            <div className="flex gap-2">
             {[1, 2, 3].map((s) => (
               <div
                 key={s}
@@ -156,11 +202,12 @@ const Register = () => {
                 } ${s === 3 && accountType === 'customer' ? 'hidden' : ''}`}
               />
             ))}
-          </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Step 1: Account Type */}
-            {step === 1 && (
+            {step === 1 && !isUpgradeFlow && (
               <div role="radiogroup" aria-label="Tipo de cuenta" className="space-y-3">
                 <button
                   type="button"
@@ -233,7 +280,7 @@ const Register = () => {
             )}
 
             {/* Step 2: Personal Info */}
-            {step === 2 && (
+            {step === 2 && !isUpgradeFlow && (
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nombre Completo *</Label>
@@ -289,7 +336,7 @@ const Register = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="phone">Teléfono</Label>
                     <div className="relative">
@@ -391,7 +438,7 @@ const Register = () => {
 
             {/* Navigation Buttons */}
             <div className="flex gap-4">
-              {step > 1 && (
+              {step > 1 && !isUpgradeFlow && (
                 <Button
                   type="button"
                   variant="outline"
@@ -422,11 +469,11 @@ const Register = () => {
                   {isLoading ? (
                     <>
                       <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Creando cuenta...
+                      {isUpgradeFlow ? 'Registrando negocio...' : 'Creando cuenta...'}
                     </>
                   ) : (
                     <>
-                      Crear Cuenta
+                      {isUpgradeFlow ? 'Registrar Negocio' : 'Crear Cuenta'}
                       <ArrowRight className="h-5 w-5" />
                     </>
                   )}
@@ -435,12 +482,14 @@ const Register = () => {
             </div>
           </form>
 
-          <p className="text-center text-muted-foreground">
-            ¿Ya tienes cuenta?{' '}
-            <Link to="/login" className="text-primary font-semibold hover:underline">
-              Inicia Sesión
-            </Link>
-          </p>
+          {!isUpgradeFlow && (
+            <p className="text-center text-muted-foreground">
+              ¿Ya tienes cuenta?{' '}
+              <Link to="/login" className="text-primary font-semibold hover:underline">
+                Inicia Sesión
+              </Link>
+            </p>
+          )}
         </div>
       </div>
 

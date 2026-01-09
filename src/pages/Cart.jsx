@@ -1,8 +1,6 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useApp } from '@/context/AppContext';
 import { toast } from 'sonner';
@@ -64,7 +62,7 @@ const Cart = () => {
               {cart.map((item) => (
                 <div
                   key={item.product.id}
-                  className="flex gap-4 p-4 bg-card rounded-xl border border-border animate-slide-up"
+                  className="flex flex-col sm:flex-row gap-4 p-4 bg-card rounded-xl border border-border animate-slide-up"
                 >
                   <img
                     src={item.product.image}
@@ -86,7 +84,7 @@ const Cart = () => {
                       ${item.product.price.toFixed(2)}
                     </p>
                   </div>
-                  <div className="flex flex-col items-end justify-between">
+                  <div className="flex w-full items-center justify-between sm:w-auto sm:flex-col sm:items-end sm:justify-between">
                     <button
                       onClick={() => removeFromCart(item.product.id)}
                       className="text-muted-foreground hover:text-destructive transition-colors"

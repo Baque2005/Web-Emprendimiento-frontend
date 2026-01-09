@@ -94,7 +94,7 @@ const BusinessDetail = () => {
                 <p className="text-muted-foreground">{business.description}</p>
 
                 {/* Stats */}
-                <div className="grid grid-cols-3 gap-4 mt-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
                   <div className="text-center p-4 rounded-lg bg-muted/50">
                     <div className="flex items-center justify-center gap-1 text-accent mb-1">
                       <Star className="h-5 w-5 fill-current" />

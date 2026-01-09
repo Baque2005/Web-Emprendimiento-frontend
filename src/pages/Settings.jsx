@@ -15,6 +15,7 @@ import {
 import { useApp } from '@/context/AppContext';
 import { categories } from '@/data/mockData';
 import { toast } from 'sonner';
+import { Store } from 'lucide-react';
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -107,6 +108,25 @@ const Settings = () => {
             </div>
           </div>
 
+          {/* Cliente: registrar negocio */}
+          {user.role === 'customer' && (
+            <div className="bg-card rounded-xl border border-border p-6 mb-6">
+              <h2 className="font-display text-xl font-bold mb-2">¿Quieres vender?</h2>
+              <p className="text-muted-foreground mb-4">
+                Registra tu negocio para poder publicar productos y gestionar pedidos.
+              </p>
+              <Button
+                variant="outline"
+                size="lg"
+                className="rounded-xl"
+                onClick={() => navigate('/register')}
+              >
+                Registrar Negocio
+                <Store className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+
           {/* Negocio (solo emprendedor) */}
           {user.role === 'entrepreneur' && (
             <div className="bg-card rounded-xl border border-border p-6">
@@ -144,11 +164,15 @@ const Settings = () => {
                         <SelectValue placeholder="Selecciona" />
                       </SelectTrigger>
                       <SelectContent>
-                        {categories.map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id}>
-                            {cat.icon} {cat.name}
-                          </SelectItem>
-                        ))}
+                        {categories.map((cat) => {
+                          const Icon = cat.icon;
+                          return (
+                            <SelectItem key={cat.id} value={cat.id}>
+                              <Icon className="h-4 w-4 mr-2 inline-block" />
+                              {cat.name}
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                   </div>

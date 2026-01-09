@@ -323,7 +323,7 @@ const Dashboard = () => {
                           placeholder="Describe tu producto..."
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label>Precio *</Label>
                           <Input
@@ -354,11 +354,15 @@ const Dashboard = () => {
                             <SelectValue placeholder="Selecciona" />
                           </SelectTrigger>
                           <SelectContent>
-                            {categories.map(cat => (
-                              <SelectItem key={cat.id} value={cat.id}>
-                                {cat.icon} {cat.name}
-                              </SelectItem>
-                            ))}
+                            {categories.map((cat) => {
+                              const Icon = cat.icon;
+                              return (
+                                <SelectItem key={cat.id} value={cat.id}>
+                                  <Icon className="h-4 w-4 mr-2 inline-block" />
+                                  {cat.name}
+                                </SelectItem>
+                              );
+                            })}
                           </SelectContent>
                         </Select>
                       </div>
@@ -408,7 +412,7 @@ const Dashboard = () => {
                           placeholder="Describe tu producto..."
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label>Precio *</Label>
                           <Input
@@ -439,11 +443,15 @@ const Dashboard = () => {
                             <SelectValue placeholder="Selecciona" />
                           </SelectTrigger>
                           <SelectContent>
-                            {categories.map(cat => (
-                              <SelectItem key={cat.id} value={cat.id}>
-                                {cat.icon} {cat.name}
-                              </SelectItem>
-                            ))}
+                            {categories.map((cat) => {
+                              const Icon = cat.icon;
+                              return (
+                                <SelectItem key={cat.id} value={cat.id}>
+                                  <Icon className="h-4 w-4 mr-2 inline-block" />
+                                  {cat.name}
+                                </SelectItem>
+                              );
+                            })}
                           </SelectContent>
                         </Select>
                       </div>

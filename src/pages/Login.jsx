@@ -10,7 +10,7 @@ import VantaHaloBackground from '@/components/ui/VantaHaloBackground';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { setUser } = useApp();
+  const { setUser, upsertUser } = useApp();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -32,31 +32,37 @@ const Login = () => {
 
     // Mock login - check for demo accounts
     if (formData.email === 'emprendedor@ug.edu.ec') {
-      setUser({
+      const nextUser = {
         id: 'u1',
         name: 'María García',
         email: formData.email,
         role: 'entrepreneur',
         businessId: 'b1',
-      });
+      };
+      setUser(nextUser);
+      upsertUser(nextUser);
       toast.success('¡Bienvenida, María!');
       navigate('/dashboard');
     } else if (formData.email === 'admin@ug.edu.ec') {
-      setUser({
+      const nextUser = {
         id: 'admin',
         name: 'Administrador',
         email: formData.email,
         role: 'admin',
-      });
+      };
+      setUser(nextUser);
+      upsertUser(nextUser);
       toast.success('¡Bienvenido, Administrador!');
       navigate('/admin');
     } else {
-      setUser({
+      const nextUser = {
         id: `u${Date.now()}`,
         name: formData.email.split('@')[0],
         email: formData.email,
         role: 'customer',
-      });
+      };
+      setUser(nextUser);
+      upsertUser(nextUser);
       toast.success('¡Bienvenido!');
       navigate('/');
     }

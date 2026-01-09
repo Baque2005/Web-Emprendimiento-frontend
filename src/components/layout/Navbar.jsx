@@ -6,7 +6,6 @@ import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuCont
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
   ShoppingCart,
-  User,
   Menu,
   Store,
   LogOut,
@@ -14,6 +13,8 @@ import {
   Package,
   HelpCircle,
   GraduationCap,
+  Shield,
+  IdCard,
 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 
@@ -102,6 +103,18 @@ export const Navbar = () => {
                   <DropdownMenuItem onClick={() => navigate('/dashboard')}>
                     <Store className="mr-2 h-4 w-4" />
                     Mi Negocio
+                  </DropdownMenuItem>
+                )}
+                {user.role === 'admin' && (
+                  <DropdownMenuItem onClick={() => navigate('/admin')}>
+                    <Shield className="mr-2 h-4 w-4" />
+                    Administración
+                  </DropdownMenuItem>
+                )}
+                {user.role !== 'admin' && (
+                  <DropdownMenuItem onClick={() => navigate('/profile')}>
+                    <IdCard className="mr-2 h-4 w-4" />
+                    Mi Perfil
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onClick={() => navigate('/orders')}>

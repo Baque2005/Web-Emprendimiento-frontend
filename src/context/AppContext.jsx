@@ -10,6 +10,33 @@ export const AppProvider = ({ children }) => {
     return saved ? JSON.parse(saved) : null;
   });
 
+  const [users, setUsers] = useState(() => {
+    const saved = localStorage.getItem('ug-users');
+    if (saved) return JSON.parse(saved);
+
+    return [
+      {
+        id: 'admin',
+        name: 'Administrador',
+        email: 'admin@ug.edu.ec',
+        role: 'admin',
+      },
+      {
+        id: 'u1',
+        name: 'María García',
+        email: 'emprendedor@ug.edu.ec',
+        role: 'entrepreneur',
+        businessId: 'b1',
+      },
+      {
+        id: 'u2',
+        name: 'Cliente',
+        email: 'cliente@ug.edu.ec',
+        role: 'customer',
+      },
+    ];
+  });
+
   const [businesses, setBusinesses] = useState(() => {
     const saved = localStorage.getItem('ug-businesses');
     return saved ? JSON.parse(saved) : mockBusinesses;
@@ -41,6 +68,10 @@ export const AppProvider = ({ children }) => {
       localStorage.removeItem('ug-user');
     }
   }, [user]);
+
+  useEffect(() => {
+    localStorage.setItem('ug-users', JSON.stringify(users));
+  }, [users]);
 
   useEffect(() => {
     localStorage.setItem('ug-cart', JSON.stringify(cart));
@@ -132,14 +163,37 @@ export const AppProvider = ({ children }) => {
   const updateBusiness = (business) => {
     setBusinesses(prev => prev.map(b => (b.id === business.id ? business : b)));
   };
+
+  const deleteBusiness = (businessId) => {
+    setBusinesses(prev => prev.filter(b => b.id !== businessId));
+    setUsers(prev => prev.map(u => (u.businessId === businessId ? { ...u, businessId: undefined } : u)));
+  };
+
+  const upsertUser = (nextUser) => {
+    setUsers(prev => {
+      const index = prev.findIndex(u => u.id === nextUser.id || u.email === nextUser.email);
+      if (index >= 0) {
+        return prev.map((u, i) => (i === index ? { ...u, ...nextUser } : u));
+      }
+      return [...prev, nextUser];
+    });
+  };
+
+  const deleteUser = (userId) => {
+    setUsers(prev => prev.filter(u => u.id !== userId));
+  };
   return (
     <AppContext.Provider
       value={{
         user,
         setUser,
+        users,
+        upsertUser,
+        deleteUser,
         businesses,
         addBusiness,
         updateBusiness,
+        deleteBusiness,
         cart,
         addToCart,
         removeFromCart,
