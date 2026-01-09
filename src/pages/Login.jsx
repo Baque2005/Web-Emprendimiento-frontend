@@ -3,9 +3,10 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useApp } from '@/context/AppContext';
 import { toast } from 'sonner';
-import { GraduationCap, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { GraduationCap, Mail, Lock, Eye, EyeOff, ArrowRight, AlertTriangle } from 'lucide-react';
 import VantaHaloBackground from '@/components/ui/VantaHaloBackground';
 
 const Login = () => {
@@ -13,65 +14,123 @@ const Login = () => {
   const { setUser, upsertUser } = useApp();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [pageError, setPageError] = useState(null);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
 
+  const normalizeEmail = (rawEmail) => {
+    const base = (rawEmail ?? '')
+      .toString()
+      .normalize('NFKC')
+      .replace(/[\u200B-\u200D\u2060\uFEFF]/g, '') // caracteres invisibles
+      .replace(/\s+/g, '')
+      .trim();
+
+    return base
+      .replace(/＠/g, '@')
+      .replace(/[。．｡]/g, '.')
+      .toLowerCase();
+  };
+
+  const isLikelyEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
+  const getErrorMessage = (error) => {
+    if (!error) return 'Ocurrió un error inesperado.';
+    if (typeof error === 'string') return error;
+    if (error?.message) return error.message;
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return 'Ocurrió un error inesperado.';
+    }
+  };
+
   // Cambia la firma de la función para que sea válida en .jsx (sin tipos)
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    setPageError(null);
+
+    const normalizedEmail = normalizeEmail(formData.email);
+    const emailChangedBySanitizer = normalizedEmail !== (formData.email ?? '').toString().trim().toLowerCase();
     
-    if (!formData.email || !formData.password) {
-      toast.error('Por favor completa todos los campos');
+    if (!normalizedEmail || !formData.password) {
+      const description = 'Por favor completa el correo y la contraseña.';
+      setPageError({ title: 'Faltan datos', description });
+      toast.error(description);
       return;
     }
 
-    setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    if (!isLikelyEmail(normalizedEmail)) {
+      const description = 'El correo no parece válido. Si tienes el traductor automático activo, puede estar insertando caracteres invisibles: reescribe el correo o desactiva la traducción en esta página.';
+      setPageError({ title: 'Correo inválido', description });
+      toast.error('Correo inválido', { description });
+      return;
+    }
 
-    // Mock login - check for demo accounts
-    if (formData.email === 'emprendedor@ug.edu.ec') {
-      const nextUser = {
-        id: 'u1',
-        name: 'María García',
-        email: formData.email,
-        role: 'entrepreneur',
-        businessId: 'b1',
-      };
-      setUser(nextUser);
-      upsertUser(nextUser);
-      toast.success('¡Bienvenida, María!');
-      navigate('/dashboard');
-    } else if (formData.email === 'admin@ug.edu.ec') {
-      const nextUser = {
-        id: 'admin',
-        name: 'Administrador',
-        email: formData.email,
-        role: 'admin',
-      };
-      setUser(nextUser);
-      upsertUser(nextUser);
-      toast.success('¡Bienvenido, Administrador!');
-      navigate('/admin');
-    } else {
+    try {
+      setIsLoading(true);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Mock login - check for demo accounts
+      if (normalizedEmail === 'emprendedor@ug.edu.ec') {
+        const nextUser = {
+          id: 'u1',
+          name: 'María García',
+          email: normalizedEmail,
+          role: 'entrepreneur',
+          businessId: 'b1',
+        };
+        setUser(nextUser);
+        upsertUser(nextUser);
+        toast.success('¡Bienvenida, María!');
+        navigate('/dashboard');
+        return;
+      }
+
+      if (normalizedEmail === 'admin@ug.edu.ec') {
+        const nextUser = {
+          id: 'admin',
+          name: 'Administrador',
+          email: normalizedEmail,
+          role: 'admin',
+        };
+        setUser(nextUser);
+        upsertUser(nextUser);
+        toast.success('¡Bienvenido, Administrador!');
+        navigate('/admin');
+        return;
+      }
+
       const nextUser = {
         id: `u${Date.now()}`,
-        name: formData.email.split('@')[0],
-        email: formData.email,
+        name: normalizedEmail.split('@')[0],
+        email: normalizedEmail,
         role: 'customer',
       };
       setUser(nextUser);
       upsertUser(nextUser);
       toast.success('¡Bienvenido!');
       navigate('/');
+    } catch (error) {
+      let description = getErrorMessage(error);
+      if (emailChangedBySanitizer) {
+        description = `${description}\n\nTip: Detecté caracteres/espacios raros en el correo (a veces pasa por el traductor automático). Reescribe el correo manualmente o desactiva la traducción.`;
+      }
+      setPageError({
+        title: 'No se pudo iniciar sesión',
+        description,
+      });
+      toast.error('No se pudo iniciar sesión', { description });
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex notranslate" translate="no">
       {/* Left side - Form */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md space-y-8 animate-slide-up">
@@ -93,6 +152,17 @@ const Login = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {pageError && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <div>
+                  <AlertTitle>{pageError.title}</AlertTitle>
+                  <AlertDescription>
+                    <p>{pageError.description}</p>
+                  </AlertDescription>
+                </div>
+              </Alert>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email">Correo Electrónico</Label>
               <div className="relative">
@@ -103,7 +173,11 @@ const Login = () => {
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
                   placeholder="tu@ug.edu.ec"
-                  className="pl-10"
+                  className="pl-10 notranslate"
+                  translate="no"
+                  autoComplete="email"
+                  inputMode="email"
+                  spellCheck={false}
                 />
               </div>
             </div>

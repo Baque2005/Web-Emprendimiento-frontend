@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Select,
   SelectContent,
@@ -25,6 +26,7 @@ import {
   User,
   Store,
   Phone,
+  AlertTriangle,
 } from 'lucide-react';
 import ShopShaderBackground from '@/components/ui/ShopShaderBackground';
 
@@ -49,6 +51,7 @@ const Register = () => {
   const { user, setUser, upsertUser, addBusiness } = useApp();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [pageError, setPageError] = useState(null);
   const [step, setStep] = useState(1);
   const [accountType, setAccountType] = useState('customer');
   const [formData, setFormData] = useState({
@@ -64,6 +67,33 @@ const Register = () => {
   });
 
   const isUpgradeFlow = !!user && user.role === 'customer';
+
+  const normalizeEmail = (rawEmail) => {
+    const base = (rawEmail ?? '')
+      .toString()
+      .normalize('NFKC')
+      .replace(/[\u200B-\u200D\u2060\uFEFF]/g, '')
+      .replace(/\s+/g, '')
+      .trim();
+
+    return base
+      .replace(/＠/g, '@')
+      .replace(/[。．｡]/g, '.')
+      .toLowerCase();
+  };
+
+  const isLikelyEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
+  const getErrorMessage = (error) => {
+    if (!error) return 'Ocurrió un error inesperado.';
+    if (typeof error === 'string') return error;
+    if (error?.message) return error.message;
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return 'Ocurrió un error inesperado.';
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -94,78 +124,108 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    setPageError(null);
+
+    const normalizedEmail = normalizeEmail(formData.email);
+    const emailChangedBySanitizer = normalizedEmail !== (formData.email ?? '').toString().trim().toLowerCase();
     
-    if (!formData.name || !formData.email || (!isUpgradeFlow && !formData.password)) {
-      toast.error('Por favor completa todos los campos requeridos');
+    if (!formData.name || !normalizedEmail || (!isUpgradeFlow && !formData.password)) {
+      const description = 'Completa los campos requeridos para continuar.';
+      setPageError({ title: 'Faltan datos', description });
+      toast.error(description);
+      return;
+    }
+
+    if (!isLikelyEmail(normalizedEmail)) {
+      const description = 'El correo no parece válido. Si tienes el traductor automático activo, puede estar insertando caracteres invisibles: reescribe el correo o desactiva la traducción en esta página.';
+      setPageError({ title: 'Correo inválido', description });
+      toast.error('Correo inválido', { description });
       return;
     }
 
     if (accountType === 'entrepreneur' && (!formData.businessName || !formData.businessCategory)) {
-      toast.error('Por favor completa la información del negocio');
+      const description = 'Completa el nombre y la categoría del negocio.';
+      setPageError({ title: 'Falta información del negocio', description });
+      toast.error(description);
       return;
     }
 
-    setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      setIsLoading(true);
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
-    const businessId = accountType === 'entrepreneur' ? `b${Date.now()}` : undefined;
+      const businessId = accountType === 'entrepreneur' ? `b${Date.now()}` : undefined;
 
-    const nextUser = isUpgradeFlow
-      ? {
-          ...user,
-          role: 'entrepreneur',
-          businessId,
-          name: formData.name,
-          phone: formData.phone || '',
-          faculty: formData.faculty || '',
-        }
-      : {
-          id: `u${Date.now()}`,
-          name: formData.name,
-          email: formData.email,
-          role: accountType,
-          businessId,
-          phone: formData.phone || '',
-          faculty: formData.faculty || '',
-        };
+      const nextUser = isUpgradeFlow
+        ? {
+            ...user,
+            role: 'entrepreneur',
+            businessId,
+            name: formData.name,
+            email: normalizedEmail,
+            phone: formData.phone || '',
+            faculty: formData.faculty || '',
+          }
+        : {
+            id: `u${Date.now()}`,
+            name: formData.name,
+            email: normalizedEmail,
+            role: accountType,
+            businessId,
+            phone: formData.phone || '',
+            faculty: formData.faculty || '',
+          };
 
-    setUser(nextUser);
-    upsertUser(nextUser);
+      setUser(nextUser);
+      upsertUser(nextUser);
 
-    if (accountType === 'entrepreneur' && businessId) {
-      addBusiness({
-        id: businessId,
-        name: formData.businessName,
-        description: formData.businessDescription || 'Emprendimiento universitario',
-        logo: 'https://images.unsplash.com/photo-1520975916090-3105956dac38?w=200&h=200&fit=crop',
-        banner: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&h=300&fit=crop',
-        category: formData.businessCategory,
-        owner: nextUser.name,
-        faculty: nextUser.faculty || 'Universidad de Guayaquil',
-        phone: nextUser.phone || '',
-        email: nextUser.email,
-        instagram: formData.instagram || '',
-        rating: 0,
-        totalSales: 0,
-        joinedDate: new Date().toISOString().slice(0, 10),
-      });
-    }
-    
-    if (accountType === 'entrepreneur') {
-      toast.success('¡Negocio registrado exitosamente!', {
-        description: 'Ya puedes comenzar a agregar productos.',
-      });
-      navigate('/dashboard');
-    } else {
+      if (accountType === 'entrepreneur' && businessId) {
+        addBusiness({
+          id: businessId,
+          name: formData.businessName,
+          description: formData.businessDescription || 'Emprendimiento universitario',
+          logo: 'https://images.unsplash.com/photo-1520975916090-3105956dac38?w=200&h=200&fit=crop',
+          banner: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&h=300&fit=crop',
+          category: formData.businessCategory,
+          owner: nextUser.name,
+          faculty: nextUser.faculty || 'Universidad de Guayaquil',
+          phone: nextUser.phone || '',
+          email: nextUser.email,
+          instagram: formData.instagram || '',
+          rating: 0,
+          totalSales: 0,
+          joinedDate: new Date().toISOString().slice(0, 10),
+        });
+      }
+      
+      if (accountType === 'entrepreneur') {
+        toast.success('¡Negocio registrado exitosamente!', {
+          description: 'Ya puedes comenzar a agregar productos.',
+        });
+        navigate('/dashboard');
+        return;
+      }
+
       toast.success('¡Cuenta creada exitosamente!');
       navigate('/');
+    } catch (error) {
+      let description = getErrorMessage(error);
+      if (emailChangedBySanitizer) {
+        description = `${description}\n\nTip: Detecté caracteres/espacios raros en el correo (a veces pasa por el traductor automático). Reescribe el correo manualmente o desactiva la traducción.`;
+      }
+      setPageError({
+        title: 'No se pudo completar el registro',
+        description,
+      });
+      toast.error('No se pudo completar el registro', { description });
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex notranslate" translate="no">
       {/* Left side - Form */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md space-y-6 animate-slide-up">
@@ -206,6 +266,17 @@ const Register = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {pageError && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <div>
+                  <AlertTitle>{pageError.title}</AlertTitle>
+                  <AlertDescription>
+                    <p>{pageError.description}</p>
+                  </AlertDescription>
+                </div>
+              </Alert>
+            )}
             {/* Step 1: Account Type */}
             {step === 1 && !isUpgradeFlow && (
               <div role="radiogroup" aria-label="Tipo de cuenta" className="space-y-3">
@@ -307,7 +378,11 @@ const Register = () => {
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
                       placeholder="tu@ug.edu.ec"
-                      className="pl-10"
+                      className="pl-10 notranslate"
+                      translate="no"
+                      autoComplete="email"
+                      inputMode="email"
+                      spellCheck={false}
                       required
                     />
                   </div>
