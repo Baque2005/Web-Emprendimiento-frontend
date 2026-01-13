@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useApp } from '@/context/AppContext';
 import { toast } from 'sonner';
-import { GraduationCap, Mail, Lock, Eye, EyeOff, ArrowRight, AlertTriangle } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, AlertTriangle } from 'lucide-react';
 import VantaHaloBackground from '@/components/ui/VantaHaloBackground';
 
 const Login = () => {
@@ -134,11 +134,11 @@ const Login = () => {
       {/* Left side - Form */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md space-y-8 animate-slide-up">
-          <Link to="/" className="flex items-center gap-2 font-display text-xl font-bold">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-primary">
-              <GraduationCap className="h-5 w-5 text-primary-foreground" />
+          <Link to="/" className="flex items-center gap-0 font-display text-xl font-bold">
+            <div className="flex h-20 w-20 items-center justify-center">
+              <img src="/UGLOGO.png" alt="UG" className="h-16 w-16 object-contain" />
             </div>
-            <span>
+            <span className="-ml-1">
               <span className="text-primary">UG</span>
               <span className="text-accent"> Emprende</span>
             </span>

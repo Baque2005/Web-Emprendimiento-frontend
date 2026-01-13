@@ -3,7 +3,7 @@ import { Layout } from '@/components/layout/Layout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useApp } from '@/context/AppContext';
-import { Package, ArrowLeft, ShoppingBag, Store } from 'lucide-react';
+import { Package, ArrowLeft, ShoppingBag, Store, MapPin } from 'lucide-react';
 
 const Orders = () => {
   const navigate = useNavigate();
@@ -52,6 +52,15 @@ const Orders = () => {
             <div className="space-y-4">
               {orders.map(order => {
                 const business = businesses.find(b => b.id === order.businessId);
+                const deliveryMethod = order.delivery?.method;
+                const isPickup = deliveryMethod === 'pickup';
+                const deliveryText = isPickup
+                  ? 'Retiro'
+                  : order.delivery?.address
+                    ? `${order.delivery.address.label || 'Dirección'}: ${order.delivery.address.address || ''}${order.delivery.address.city ? `, ${order.delivery.address.city}` : ''}`.trim()
+                    : order.delivery?.addressText
+                      ? `Entrega: ${order.delivery.addressText}`
+                      : null;
                 
                 return (
                   <div
@@ -120,6 +129,12 @@ const Orders = () => {
                         <p className="text-sm text-muted-foreground mt-1">
                           {order.paymentMethod === 'paypal' ? '💳 PayPal' : '💵 Efectivo'}
                         </p>
+                        {deliveryText && (
+                          <div className="mt-2 flex items-start justify-end gap-2 text-xs text-muted-foreground">
+                            <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
+                            <p className="max-w-[260px] text-right">{deliveryText}</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -36,6 +36,8 @@ import {
   Eye,
   Settings,
   Upload,
+  MapPin,
+  Phone,
 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -555,6 +557,37 @@ const Dashboard = () => {
                               dateStyle: 'medium',
                             })} - {order.products.length} productos
                           </p>
+
+                          {(order.contact?.phone || order.delivery?.method) && (
+                            <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                              {order.contact?.phone && (
+                                <div className="flex items-center gap-2">
+                                  <Phone className="h-3.5 w-3.5" />
+                                  <span>{order.contact.phone}</span>
+                                </div>
+                              )}
+
+                              {order.delivery?.method === 'pickup' && (
+                                <div className="flex items-center gap-2">
+                                  <MapPin className="h-3.5 w-3.5" />
+                                  <span>Retiro (sin dirección)</span>
+                                </div>
+                              )}
+
+                              {order.delivery?.method === 'delivery' && (
+                                <div className="flex items-start gap-2">
+                                  <MapPin className="h-3.5 w-3.5 mt-0.5" />
+                                  <span>
+                                    {order.delivery.address
+                                      ? `${order.delivery.address.label || 'Dirección'}: ${order.delivery.address.address || ''}${order.delivery.address.city ? `, ${order.delivery.address.city}` : ''}`.trim()
+                                      : order.delivery.addressText
+                                        ? `Entrega: ${order.delivery.addressText}`
+                                        : 'Entrega'}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                         <div className="text-right">
                           <p className="font-display text-xl font-bold text-primary">

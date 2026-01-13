@@ -12,7 +12,6 @@ import {
   Settings,
   Package,
   HelpCircle,
-  GraduationCap,
   Shield,
   IdCard,
 } from 'lucide-react';
@@ -38,13 +37,13 @@ export const Navbar = () => {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
+      <div className="container flex h-20 items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 font-display text-xl font-bold">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-primary">
-            <GraduationCap className="h-5 w-5 text-primary-foreground" />
+        <Link to="/" className="flex items-center gap-0 font-display text-xl font-bold">
+          <div className="flex h-16 w-16 items-center justify-center">
+            <img src="/UGLOGO.png" alt="UG" className="h-12 w-12 object-contain" />
           </div>
-          <span className="hidden sm:inline">
+          <span className="hidden sm:inline -ml-1">
             <span className="text-primary">UG</span>
             <span className="text-accent"> Emprende</span>
           </span>
@@ -121,10 +120,12 @@ export const Navbar = () => {
                   <Package className="mr-2 h-4 w-4" />
                   Mis Pedidos
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/settings')}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  Configuración
-                </DropdownMenuItem>
+                {user.role !== 'admin' && (
+                  <DropdownMenuItem onClick={() => navigate('/profile?tab=settings')}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    Configuración
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={() => navigate('/help')}>
                   <HelpCircle className="mr-2 h-4 w-4" />
                   Ayuda

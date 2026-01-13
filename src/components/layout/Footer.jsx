@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { GraduationCap, Instagram, Mail, Phone } from 'lucide-react';
+import { Instagram, Mail, Phone } from 'lucide-react';
 
 export const Footer = () => {
   return (
@@ -8,11 +8,11 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="space-y-4">
-            <Link to="/" className="flex items-center gap-2 font-display text-xl font-bold">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-primary">
-                <GraduationCap className="h-5 w-5 text-primary-foreground" />
+            <Link to="/" className="flex items-center gap-0 font-display text-xl font-bold">
+              <div className="flex h-16 w-16 items-center justify-center">
+                <img src="/UGLOGO.png" alt="UG" className="h-12 w-12 object-contain" />
               </div>
-              <span>
+              <span className="-ml-1">
                 <span className="text-primary">UG</span>
                 <span className="text-accent"> Emprende</span>
               </span>

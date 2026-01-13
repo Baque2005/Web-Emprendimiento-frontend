@@ -24,12 +24,7 @@ import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 // Admin
-import AdminLayout from "./pages/admin/AdminLayout";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminUsers from "./pages/admin/AdminUsers";
-import AdminBusinesses from "./pages/admin/AdminBusinesses";
-import AdminOrders from "./pages/admin/AdminOrders";
-import AdminReports from "./pages/admin/AdminReports";
+import Admin from "./pages/Admin";
 
 const queryClient = new QueryClient();
 
@@ -57,13 +52,7 @@ const App = () => (
               <Route path="/profile" element={<Profile />} />
               <Route path="/help" element={<Help />} />
 
-              <Route path="/admin" element={<AdminLayout />}>
-                <Route index element={<AdminDashboard />} />
-                <Route path="users" element={<AdminUsers />} />
-                <Route path="businesses" element={<AdminBusinesses />} />
-                <Route path="orders" element={<AdminOrders />} />
-                <Route path="reports" element={<AdminReports />} />
-              </Route>
+              <Route path="/admin" element={<Admin />} />
 
               <Route path="*" element={<NotFound />} />
             </Routes>
