@@ -45,7 +45,15 @@ import { mockProducts } from '@/data/mockData';
 const Profile = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, orders = [], setUser } = useApp();
+  const {
+    user,
+    orders = [],
+    setUser,
+    getNotificationsForUser,
+    markNotificationAsRead,
+    markAllNotificationsAsRead,
+    deleteNotification,
+  } = useApp();
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('info');
 
@@ -113,30 +121,7 @@ const Profile = () => {
   });
   const favoriteProducts = mockProducts.filter((p) => favorites.includes(p.id));
 
-  // Notifications state
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      title: 'Tu pedido está en preparación',
-      message: 'El pedido #o1 está siendo preparado',
-      time: '2 horas',
-      read: false,
-    },
-    {
-      id: 2,
-      title: 'Nuevo producto disponible',
-      message: 'Sabores UG agregó nuevos productos',
-      time: '1 día',
-      read: true,
-    },
-    {
-      id: 3,
-      title: '¡Oferta especial!',
-      message: '20% de descuento en artesanías',
-      time: '3 días',
-      read: true,
-    },
-  ]);
+  const notifications = getNotificationsForUser?.(user?.id) || [];
 
   // Modal states
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -199,18 +184,18 @@ const Profile = () => {
     toast.success('Eliminado de favoritos');
   };
 
-  const markNotificationAsRead = (notificationId) => {
-    setNotifications((prev) => prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n)));
-  };
-
-  const markAllNotificationsAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    toast.success('Todas las notificaciones marcadas como leídas');
-  };
-
-  const deleteNotification = (notificationId) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
-    toast.success('Notificación eliminada');
+  const formatTimeAgo = (createdAt) => {
+    if (!createdAt) return '';
+    const ts = new Date(createdAt).getTime();
+    if (Number.isNaN(ts)) return '';
+    const diffMs = Date.now() - ts;
+    const diffMin = Math.max(0, Math.floor(diffMs / 60000));
+    if (diffMin < 1) return 'unos segundos';
+    if (diffMin < 60) return `${diffMin} min`;
+    const diffH = Math.floor(diffMin / 60);
+    if (diffH < 24) return `${diffH} hora${diffH === 1 ? '' : 's'}`;
+    const diffD = Math.floor(diffH / 24);
+    return `${diffD} día${diffD === 1 ? '' : 's'}`;
   };
 
   // Payment methods functions
@@ -703,7 +688,10 @@ const Profile = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={markAllNotificationsAsRead}
+                      onClick={() => {
+                        markAllNotificationsAsRead?.(user?.id);
+                        toast.success('Todas las notificaciones marcadas como leídas');
+                      }}
                       className="text-xs sm:text-sm"
                     >
                       Marcar todas como leídas
@@ -726,7 +714,7 @@ const Profile = () => {
                         className={`flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg border transition-colors ${
                           notification.read ? 'bg-background' : 'bg-primary/5 border-primary/20'
                         }`}
-                        onClick={() => markNotificationAsRead(notification.id)}
+                        onClick={() => markNotificationAsRead?.(user?.id, notification.id)}
                       >
                         <div
                           className={`h-8 w-8 sm:h-10 sm:w-10 rounded-full flex items-center justify-center shrink-0 ${
@@ -745,12 +733,15 @@ const Profile = () => {
                             {!notification.read && <span className="h-2 w-2 rounded-full bg-primary shrink-0" />}
                           </div>
                           <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{notification.message}</p>
-                          <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Hace {notification.time}</p>
+                          <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
+                            Hace {notification.time || formatTimeAgo(notification.createdAt)}
+                          </p>
                         </div>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            deleteNotification(notification.id);
+                            deleteNotification?.(user?.id, notification.id);
+                            toast.success('Notificación eliminada');
                           }}
                           className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
                         >

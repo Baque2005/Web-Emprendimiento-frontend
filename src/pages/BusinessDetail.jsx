@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { ProductCard } from '@/components/catalog/ProductCard';
 import { categories } from '@/data/mockData';
 import { useApp } from '@/context/AppContext';
+import { ReportButton } from '@/components/reports/ReportButton';
 import {
   ArrowLeft,
   Star,
@@ -71,15 +72,27 @@ const BusinessDetail = () => {
                 )}
                 <h1 className="font-display text-3xl md:text-4xl font-bold">{business.name}</h1>
               </div>
+
+              <div className="w-full md:w-auto md:ml-auto">
+                <ReportButton
+                  type="business"
+                  targetId={business.id}
+                  targetName={business.name}
+                  buttonVariant="outline"
+                  buttonSize="sm"
+                  className="w-full md:w-auto gap-2"
+                  showText
+                />
+              </div>
             </div>
           </div>
         </div>
 
         {/* Content */}
-        <div className="container pt-20 pb-16">
+        <div className="container pt-28 sm:pt-24 md:pt-20 pb-16">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors"
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground mt-10 sm:mt-8 md:mt-0 mb-8 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
             Volver

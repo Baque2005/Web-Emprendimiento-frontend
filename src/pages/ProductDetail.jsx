@@ -1,9 +1,10 @@
-import { useLayoutEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,8 +16,11 @@ import {
 import { categories } from '@/data/mockData';
 import { useApp } from '@/context/AppContext';
 import { toast } from 'sonner';
+import { ReportButton } from '@/components/reports/ReportButton';
 import {
   ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
   Copy,
   ShoppingCart,
   Minus,
@@ -36,6 +40,14 @@ const ProductDetail = () => {
   const { products, businesses, addToCart } = useApp();
   const [quantity, setQuantity] = useState(1);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [currentImageSrc, setCurrentImageSrc] = useState('');
+  const [previousImageSrc, setPreviousImageSrc] = useState('');
+  const [isImageOpen, setIsImageOpen] = useState(false);
+  const [autoPaused, setAutoPaused] = useState(false);
+  const rotateTimeoutRef = useRef(null);
+  const resumeTimeoutRef = useRef(null);
+  const modalHistoryPushedRef = useRef(false);
 
   useLayoutEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
@@ -44,6 +56,110 @@ const ProductDetail = () => {
   const product = products.find(p => p.id === id);
   const business = product ? businesses.find(b => b.id === product.businessId) : null;
   const category = product ? categories.find(c => c.id === product.category) : null;
+  const acceptsDelivery = product?.acceptsDelivery !== false;
+  const acceptsPickup = product?.acceptsPickup !== false;
+  const acceptsPaypal = product?.acceptsPaypal !== false;
+  const acceptsCash = product?.acceptsCash !== false;
+
+  const fallbackImage = 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=900&h=900&fit=crop';
+  const images = useMemo(() => {
+    if (Array.isArray(product?.images) && product.images.filter(Boolean).length > 0) {
+      return product.images.filter(Boolean);
+    }
+    return product?.image ? [product.image] : [];
+  }, [product]);
+
+  useEffect(() => {
+    setActiveImageIndex(0);
+  }, [product?.id]);
+
+  const clearRotateTimers = useCallback(() => {
+    if (rotateTimeoutRef.current) {
+      window.clearTimeout(rotateTimeoutRef.current);
+      rotateTimeoutRef.current = null;
+    }
+  }, []);
+
+  const scheduleNextRotate = useCallback(() => {
+    clearRotateTimers();
+    if (images.length <= 1) return;
+    if (autoPaused) return;
+
+    rotateTimeoutRef.current = window.setTimeout(() => {
+      setActiveImageIndex((prev) => (prev + 1) % images.length);
+    }, 5000);
+  }, [autoPaused, clearRotateTimers, images.length]);
+
+  const registerGalleryInteraction = useCallback(() => {
+    setAutoPaused(true);
+    clearRotateTimers();
+    if (resumeTimeoutRef.current) {
+      window.clearTimeout(resumeTimeoutRef.current);
+    }
+    resumeTimeoutRef.current = window.setTimeout(() => {
+      setAutoPaused(false);
+    }, 10000);
+  }, [clearRotateTimers]);
+
+  useEffect(() => {
+    scheduleNextRotate();
+    return () => clearRotateTimers();
+  }, [activeImageIndex, scheduleNextRotate, clearRotateTimers]);
+
+  useEffect(() => {
+    if (!autoPaused) scheduleNextRotate();
+  }, [autoPaused, scheduleNextRotate]);
+
+  useEffect(() => {
+    return () => {
+      if (resumeTimeoutRef.current) window.clearTimeout(resumeTimeoutRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isImageOpen) return;
+
+    // Para que el botón Atrás cierre el modal primero.
+    modalHistoryPushedRef.current = true;
+    window.history.pushState({ modal: 'product-image' }, '', window.location.href);
+
+    const onPopState = () => {
+      if (modalHistoryPushedRef.current) {
+        modalHistoryPushedRef.current = false;
+        setIsImageOpen(false);
+      }
+    };
+
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [isImageOpen]);
+
+  const nextImageSrc = useMemo(() => {
+    return images[activeImageIndex] || product?.image || fallbackImage;
+  }, [images, activeImageIndex, product?.image, fallbackImage]);
+
+  const closeImageModal = useCallback(() => {
+    registerGalleryInteraction();
+    setIsImageOpen(false);
+    if (modalHistoryPushedRef.current) {
+      modalHistoryPushedRef.current = false;
+      window.history.back();
+    }
+  }, [registerGalleryInteraction]);
+
+  useEffect(() => {
+    if (!nextImageSrc) return;
+
+    setCurrentImageSrc((prev) => {
+      if (prev && prev !== nextImageSrc) {
+        setPreviousImageSrc(prev);
+        window.setTimeout(() => setPreviousImageSrc(''), 450);
+      } else {
+        setPreviousImageSrc('');
+      }
+      return nextImageSrc;
+    });
+  }, [nextImageSrc]);
 
   if (!product || !business) {
     return (
@@ -168,13 +284,125 @@ const ProductDetail = () => {
     window.open(shareUrl, '_blank', 'noopener,noreferrer');
   };
 
+  const reportButton = (
+    <ReportButton
+      type="product"
+      targetId={product.id}
+      targetName={product.name}
+      buttonVariant="outline"
+      buttonSize="lg"
+      className="px-4"
+      showText={false}
+    />
+  );
+
+  const shareDropdown = (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          size="lg"
+          className="px-4"
+          aria-label="Compartir producto"
+        >
+          <Share2 className="h-5 w-5" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel>Compartir</DropdownMenuLabel>
+        <DropdownMenuItem
+          onSelect={(e) => {
+            e.preventDefault();
+            handleCopyLink();
+          }}
+          className="gap-2"
+        >
+          <Copy className="h-4 w-4" />
+          Copiar enlace
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onSelect={(e) => {
+            e.preventDefault();
+            shareTo('whatsapp');
+          }}
+          className="gap-2"
+        >
+          <MessageCircle className="h-4 w-4" />
+          WhatsApp
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={(e) => {
+            e.preventDefault();
+            shareTo('facebook');
+          }}
+          className="gap-2"
+        >
+          <Send className="h-4 w-4" />
+          Facebook
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={(e) => {
+            e.preventDefault();
+            shareTo('x');
+          }}
+          className="gap-2"
+        >
+          <Send className="h-4 w-4" />
+          X (Twitter)
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={(e) => {
+            e.preventDefault();
+            shareTo('telegram');
+          }}
+          className="gap-2"
+        >
+          <Send className="h-4 w-4" />
+          Telegram
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={(e) => {
+            e.preventDefault();
+            shareTo('email');
+          }}
+          className="gap-2"
+        >
+          <Mail className="h-4 w-4" />
+          Email
+        </DropdownMenuItem>
+        {typeof navigator !== 'undefined' && typeof navigator.share === 'function' && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onSelect={(e) => {
+                e.preventDefault();
+                handleShare();
+              }}
+              className="gap-2"
+            >
+              <Share2 className="h-4 w-4" />
+              Más opciones...
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   return (
     <Layout>
       <div key={id} className="min-h-screen bg-background py-8 animate-slide-up">
         <div className="container">
           {/* Breadcrumb */}
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              if (isImageOpen) {
+                closeImageModal();
+                return;
+              }
+              navigate(-1);
+            }}
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -185,11 +413,68 @@ const ProductDetail = () => {
             {/* Product Image */}
             <div className="space-y-4">
               <div className="relative aspect-square rounded-2xl overflow-hidden bg-muted">
+                {previousImageSrc ? (
+                  <img
+                    src={previousImageSrc}
+                    alt={product.name}
+                    className="absolute inset-0 h-full w-full object-cover"
+                    aria-hidden="true"
+                  />
+                ) : null}
+
                 <img
-                  src={product.image}
+                  key={currentImageSrc}
+                  src={currentImageSrc || fallbackImage}
                   alt={product.name}
-                  className="w-full h-full object-cover"
+                  className="absolute inset-0 h-full w-full object-cover motion-reduce:animate-none animate-in fade-in-0 duration-500 cursor-zoom-in"
+                  onClick={() => {
+                    registerGalleryInteraction();
+                    setIsImageOpen(true);
+                  }}
                 />
+
+                {images.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/40 text-white flex items-center justify-center hover:bg-black/55 transition-colors"
+                      aria-label="Imagen anterior"
+                      onClick={() => {
+                        registerGalleryInteraction();
+                        setActiveImageIndex((prev) => (prev - 1 + images.length) % images.length);
+                      }}
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </button>
+                    <button
+                      type="button"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/40 text-white flex items-center justify-center hover:bg-black/55 transition-colors"
+                      aria-label="Imagen siguiente"
+                      onClick={() => {
+                        registerGalleryInteraction();
+                        setActiveImageIndex((prev) => (prev + 1) % images.length);
+                      }}
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </button>
+
+                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2">
+                      {images.map((_, dotIndex) => (
+                        <button
+                          key={dotIndex}
+                          type="button"
+                          aria-label={`Ir a imagen ${dotIndex + 1}`}
+                          className={`h-2.5 w-2.5 rounded-full transition-colors ${dotIndex === activeImageIndex ? 'bg-white' : 'bg-white/50 hover:bg-white/80'}`}
+                          onClick={() => {
+                            registerGalleryInteraction();
+                            setActiveImageIndex(dotIndex);
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+
                 {product.featured && (
                   <Badge className="absolute top-4 left-4 bg-accent text-accent-foreground">
                     <Star className="h-3 w-3 mr-1 fill-current" />
@@ -205,6 +490,62 @@ const ProductDetail = () => {
                   />
                 </button>
               </div>
+
+              <Dialog
+                open={isImageOpen}
+                onOpenChange={(nextOpen) => {
+                  if (nextOpen) {
+                    registerGalleryInteraction();
+                    setIsImageOpen(true);
+                    return;
+                  }
+                  closeImageModal();
+                }}
+              >
+                <DialogContent className="w-auto max-w-[95vw] sm:max-w-[95vw] border-0 bg-transparent shadow-none p-0">
+                  <div
+                    className="group relative flex items-center justify-center w-[95vw] h-[85vh]"
+                    onClick={(e) => {
+                      // Click fuera de la imagen (en el área vacía) => cerrar.
+                      if (e.target === e.currentTarget) closeImageModal();
+                    }}
+                  >
+                    <img
+                      src={currentImageSrc || fallbackImage}
+                      alt={product.name}
+                      className="max-h-[85vh] max-w-[95vw] object-contain"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+
+                    {images.length > 1 && (
+                      <>
+                        <button
+                          type="button"
+                          className="absolute left-3 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-black/45 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/60"
+                          aria-label="Imagen anterior"
+                          onClick={() => {
+                            registerGalleryInteraction();
+                            setActiveImageIndex((prev) => (prev - 1 + images.length) % images.length);
+                          }}
+                        >
+                          <ChevronLeft className="h-6 w-6" />
+                        </button>
+                        <button
+                          type="button"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-black/45 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/60"
+                          aria-label="Imagen siguiente"
+                          onClick={() => {
+                            registerGalleryInteraction();
+                            setActiveImageIndex((prev) => (prev + 1) % images.length);
+                          }}
+                        >
+                          <ChevronRight className="h-6 w-6" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
 
             {/* Product Info */}
@@ -218,6 +559,32 @@ const ProductDetail = () => {
                 )}
                 <h1 className="font-display text-3xl font-bold mb-2">{product.name}</h1>
                 <p className="text-muted-foreground text-lg">{product.description}</p>
+
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {acceptsDelivery && (
+                    <Badge variant="secondary" className="text-xs">
+                      Entrega a domicilio
+                    </Badge>
+                  )}
+                  {acceptsPickup && (
+                    <Badge variant="secondary" className="text-xs">
+                      Retiro
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {acceptsPaypal && (
+                    <Badge variant="secondary" className="text-xs">
+                      PayPal
+                    </Badge>
+                  )}
+                  {acceptsCash && (
+                    <Badge variant="secondary" className="text-xs">
+                      Efectivo
+                    </Badge>
+                  )}
+                </div>
               </div>
 
               {/* Business Info */}
@@ -288,120 +655,64 @@ const ProductDetail = () => {
               </div>
 
               {/* Actions */}
-              <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
-                <Button
-                  variant="hero"
-                  size="lg"
-                  className="w-full sm:flex-1"
-                  onClick={handleAddToCart}
-                  disabled={product.stock === 0}
-                >
-                  <ShoppingCart className="h-5 w-5" />
-                  Agregar al Carrito
-                </Button>
-
-                <div className="flex gap-3 sm:gap-4">
+              <div className="space-y-3">
+                {/* Mobile (igual que antes) */}
+                <div className="flex flex-col gap-3 sm:hidden">
                   <Button
-                    variant="outline"
+                    variant="hero"
                     size="lg"
-                    className="flex-1 sm:flex-none"
-                    onClick={handleContact}
+                    className="w-full"
+                    onClick={handleAddToCart}
+                    disabled={product.stock === 0}
                   >
-                    <MessageCircle className="h-5 w-5" />
-                    Contactar
+                    <ShoppingCart className="h-5 w-5" />
+                    Agregar al Carrito
                   </Button>
 
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="lg"
-                        className="px-4"
-                        aria-label="Compartir producto"
-                      >
-                        <Share2 className="h-5 w-5" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
-                      <DropdownMenuLabel>Compartir</DropdownMenuLabel>
-                      <DropdownMenuItem
-                        onSelect={(e) => {
-                          e.preventDefault();
-                          handleCopyLink();
-                        }}
-                        className="gap-2"
-                      >
-                        <Copy className="h-4 w-4" />
-                        Copiar enlace
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onSelect={(e) => {
-                          e.preventDefault();
-                          shareTo('whatsapp');
-                        }}
-                        className="gap-2"
-                      >
-                        <MessageCircle className="h-4 w-4" />
-                        WhatsApp
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onSelect={(e) => {
-                          e.preventDefault();
-                          shareTo('facebook');
-                        }}
-                        className="gap-2"
-                      >
-                        <Send className="h-4 w-4" />
-                        Facebook
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onSelect={(e) => {
-                          e.preventDefault();
-                          shareTo('x');
-                        }}
-                        className="gap-2"
-                      >
-                        <Send className="h-4 w-4" />
-                        X (Twitter)
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onSelect={(e) => {
-                          e.preventDefault();
-                          shareTo('telegram');
-                        }}
-                        className="gap-2"
-                      >
-                        <Send className="h-4 w-4" />
-                        Telegram
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onSelect={(e) => {
-                          e.preventDefault();
-                          shareTo('email');
-                        }}
-                        className="gap-2"
-                      >
-                        <Mail className="h-4 w-4" />
-                        Email
-                      </DropdownMenuItem>
-                      {typeof navigator !== 'undefined' && typeof navigator.share === 'function' && (
-                        <>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onSelect={(e) => {
-                              e.preventDefault();
-                              handleShare();
-                            }}
-                            className="gap-2"
-                          >
-                            <Share2 className="h-4 w-4" />
-                            Más opciones...
-                          </DropdownMenuItem>
-                        </>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <div className="flex gap-3">
+                    {reportButton}
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="flex-1"
+                      onClick={handleContact}
+                    >
+                      <MessageCircle className="h-5 w-5" />
+                      Contactar
+                    </Button>
+                    {shareDropdown}
+                  </div>
+                </div>
+
+                {/* Desktop (PC): Contactar junto a Agregar; Reportar junto a Compartir */}
+                <div className="hidden sm:flex sm:items-stretch sm:gap-4">
+                  <div className="flex flex-1 gap-4">
+                    <Button
+                      variant="hero"
+                      size="lg"
+                      className="flex-1"
+                      onClick={handleAddToCart}
+                      disabled={product.stock === 0}
+                    >
+                      <ShoppingCart className="h-5 w-5" />
+                      Agregar al Carrito
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="whitespace-nowrap"
+                      onClick={handleContact}
+                    >
+                      <MessageCircle className="h-5 w-5" />
+                      Contactar
+                    </Button>
+                  </div>
+
+                  <div className="flex gap-4">
+                    {shareDropdown}
+                    {reportButton}
+                  </div>
                 </div>
               </div>
 

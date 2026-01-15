@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -41,31 +42,36 @@ export const OnboardingModal = () => {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-md">
-        <button
-          onClick={handleSkip}
-          className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100"
-        >
-          <X className="h-4 w-4" />
-          <span className="sr-only">Cerrar</span>
-        </button>
+      <DialogContent
+        hideClose
+        className="w-[calc(100%-2rem)] sm:w-full sm:max-w-md max-h-[90vh] overflow-y-auto"
+      >
+        <DialogClose asChild>
+          <button
+            onClick={handleSkip}
+            className="absolute right-3 top-3 sm:right-4 sm:top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">Cerrar</span>
+          </button>
+        </DialogClose>
 
-        <div className="flex flex-col items-center text-center py-6">
+        <div className="flex flex-col items-center text-center py-4 sm:py-6">
           <div className="mb-6 animate-float" aria-hidden="true">
-            <StepIcon className="h-14 w-14 text-primary" />
+            <StepIcon className="h-12 w-12 sm:h-14 sm:w-14 text-primary" />
           </div>
           
           <DialogHeader className="space-y-2">
-            <DialogTitle className="font-display text-2xl">
+            <DialogTitle className="font-display text-xl sm:text-2xl">
               {step.title}
             </DialogTitle>
-            <DialogDescription className="text-base">
+            <DialogDescription className="text-sm sm:text-base">
               {step.description}
             </DialogDescription>
           </DialogHeader>
 
           {/* Progress dots */}
-          <div className="flex gap-2 my-6">
+          <div className="flex flex-wrap justify-center gap-2 my-6">
             {onboardingSteps.map((_, index) => (
               <div
                 key={index}
@@ -80,9 +86,13 @@ export const OnboardingModal = () => {
             ))}
           </div>
 
-          <div className="flex gap-3 w-full">
+          <div className="flex flex-row gap-3 w-full">
             {currentStep > 0 && (
-              <Button variant="outline" onClick={handleBack} className="flex-1">
+              <Button
+                variant="outline"
+                onClick={handleBack}
+                className="shrink-0 basis-2/5"
+              >
                 <ChevronLeft className="h-4 w-4 mr-1" />
                 Atrás
               </Button>

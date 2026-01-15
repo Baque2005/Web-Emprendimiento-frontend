@@ -75,15 +75,10 @@ const mockUsers = [
   { id: 'u8', name: 'Sofía Ramos', email: 'sofia@ug.edu.ec', role: 'student', avatar: 'https://i.pravatar.cc/150?u=sofia' },
 ];
 
-const mockReports = [
-  { id: 'r1', type: 'product', targetId: 'p1', targetName: 'Almuerzo Ejecutivo', reason: 'Precio incorrecto', reportedBy: 'Pedro Suárez', reportedAt: '2024-12-20T10:00:00Z', status: 'pending' },
-  { id: 'r2', type: 'business', targetId: 'b2', targetName: 'Arte Manabita', reason: 'Información desactualizada', reportedBy: 'Laura Cevallos', reportedAt: '2024-12-19T14:00:00Z', status: 'pending' },
-  { id: 'r3', type: 'user', targetId: 'u7', targetName: 'Diego Morales', reason: 'Comportamiento inadecuado', reportedBy: 'Ana Rodríguez', reportedAt: '2024-12-18T09:00:00Z', status: 'reviewed' },
-];
 
 const Admin = () => {
   const navigate = useNavigate();
-  const { user, products = [], orders = [] } = useApp();
+  const { user, products = [], orders = [], reports = [], updateReportStatus } = useApp();
   const isAdmin = !!user && user.role === 'admin';
   
   // State
@@ -96,7 +91,6 @@ const Admin = () => {
   const [isBusinessDialogOpen, setIsBusinessDialogOpen] = useState(false);
   const [users] = useState(mockUsers);
   const [businesses] = useState(mockBusinesses);
-  const [reports, setReports] = useState(mockReports);
   const [userStatuses, setUserStatuses] = useState({});
   const [businessStatuses, setBusinessStatuses] = useState({});
 
@@ -154,13 +148,7 @@ const Admin = () => {
   };
 
   const handleReportAction = (reportId, action) => {
-    setReports((prev) =>
-      prev.map((r) =>
-        r.id === reportId
-          ? { ...r, status: action === 'resolve' ? 'resolved' : 'dismissed' }
-          : r
-      )
-    );
+    updateReportStatus(reportId, action === 'resolve' ? 'resolved' : 'dismissed');
     toast.success(`Reporte ${action === 'resolve' ? 'resuelto' : 'descartado'}`);
   };
 

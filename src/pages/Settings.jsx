@@ -26,6 +26,9 @@ const Settings = () => {
     return businesses.find((b) => b.id === user.businessId) || null;
   }, [businesses, user?.businessId]);
 
+  const [logoFileName, setLogoFileName] = useState('');
+  const [bannerFileName, setBannerFileName] = useState('');
+
   const [businessForm, setBusinessForm] = useState({
     name: '',
     description: '',
@@ -35,6 +38,15 @@ const Settings = () => {
     logo: '',
     banner: '',
   });
+
+  const readImageAsDataUrl = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(new Error('No se pudo leer la imagen'));
+      reader.readAsDataURL(file);
+    });
+  };
 
   useEffect(() => {
     if (!user) {
@@ -52,6 +64,8 @@ const Settings = () => {
         logo: business.logo || '',
         banner: business.banner || '',
       });
+      setLogoFileName('');
+      setBannerFileName('');
     }
   }, [user, business, navigate]);
 
@@ -197,21 +211,73 @@ const Settings = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>URL Logo</Label>
-                    <Input
-                      value={businessForm.logo}
-                      onChange={(e) => setBusinessForm({ ...businessForm, logo: e.target.value })}
-                      placeholder="https://..."
-                    />
+                    <Label>Logo</Label>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border border-border p-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium">Selecciona una imagen</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {logoFileName || 'Ningún archivo seleccionado'}
+                        </p>
+                      </div>
+                      <label
+                        htmlFor="business-logo"
+                        className="inline-flex h-10 w-full sm:w-auto items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer"
+                      >
+                        Elegir archivo
+                      </label>
+                      <Input
+                        id="business-logo"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          try {
+                            const dataUrl = await readImageAsDataUrl(file);
+                            setLogoFileName(file.name);
+                            setBusinessForm((prev) => ({ ...prev, logo: dataUrl }));
+                          } catch {
+                            toast.error('No se pudo cargar el logo');
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label>URL Banner</Label>
-                    <Input
-                      value={businessForm.banner}
-                      onChange={(e) => setBusinessForm({ ...businessForm, banner: e.target.value })}
-                      placeholder="https://..."
-                    />
+                    <Label>Banner</Label>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border border-border p-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium">Selecciona una imagen</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {bannerFileName || 'Ningún archivo seleccionado'}
+                        </p>
+                      </div>
+                      <label
+                        htmlFor="business-banner"
+                        className="inline-flex h-10 w-full sm:w-auto items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer"
+                      >
+                        Elegir archivo
+                      </label>
+                      <Input
+                        id="business-banner"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          try {
+                            const dataUrl = await readImageAsDataUrl(file);
+                            setBannerFileName(file.name);
+                            setBusinessForm((prev) => ({ ...prev, banner: dataUrl }));
+                          } catch {
+                            toast.error('No se pudo cargar el banner');
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
 
                   <Button variant="hero" onClick={handleSaveBusiness}>

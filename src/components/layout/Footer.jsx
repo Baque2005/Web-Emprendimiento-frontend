@@ -7,8 +7,8 @@ export const Footer = () => {
       <div className="container py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
-          <div className="space-y-4">
-            <Link to="/" className="flex items-center gap-0 font-display text-xl font-bold">
+          <div className="space-y-4 text-center md:text-left">
+            <Link to="/" className="flex items-center justify-center md:justify-start gap-0 font-display text-xl font-bold">
               <div className="flex h-16 w-16 items-center justify-center">
                 <img src="/UGLOGO.png" alt="UG" className="h-12 w-12 object-contain" />
               </div>
@@ -23,7 +23,7 @@ export const Footer = () => {
           </div>
 
           {/* Links */}
-          <div>
+          <div className="text-left">
             <h4 className="font-semibold mb-4">Navegación</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><Link to="/catalog" className="hover:text-primary transition-colors">Catálogo</Link></li>
@@ -34,17 +34,17 @@ export const Footer = () => {
           </div>
 
           {/* Legal */}
-          <div>
+          <div className="text-left">
             <h4 className="font-semibold mb-4">Legal</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><Link to="/terms" className="hover:text-primary transition-colors">Términos de Uso</Link></li>
               <li><Link to="/privacy" className="hover:text-primary transition-colors">Política de Privacidad</Link></li>
-              <li><Link to="/faq" className="hover:text-primary transition-colors">Preguntas Frecuentes</Link></li>
+              <li><Link to="/help#preguntas-frecuentes" className="hover:text-primary transition-colors">Preguntas Frecuentes</Link></li>
             </ul>
           </div>
 
           {/* Contact */}
-          <div>
+          <div className="text-left">
             <h4 className="font-semibold mb-4">Contacto</h4>
             <ul className="space-y-3 text-sm text-muted-foreground">
               <li className="flex items-center gap-2">

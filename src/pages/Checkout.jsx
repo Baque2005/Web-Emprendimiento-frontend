@@ -72,6 +72,29 @@ const Checkout = () => {
   const selectedAddress = addresses.find((a) => a?.id === selectedAddressId) || null;
   const isDelivery = deliveryMethod === 'delivery';
 
+  const canDelivery = cart.every((item) => item?.product?.acceptsDelivery !== false);
+  const canPickup = cart.every((item) => item?.product?.acceptsPickup !== false);
+  const hasAnyMethod = canDelivery || canPickup;
+  const effectiveCanDelivery = hasAnyMethod ? canDelivery : true;
+  const effectiveCanPickup = hasAnyMethod ? canPickup : true;
+
+  const canPaypal = cart.every((item) => item?.product?.acceptsPaypal !== false);
+  const canCash = cart.every((item) => item?.product?.acceptsCash !== false);
+  const hasAnyPayment = canPaypal || canCash;
+  const effectiveCanPaypal = hasAnyPayment ? canPaypal : true;
+  const effectiveCanCash = hasAnyPayment ? canCash : true;
+
+  useEffect(() => {
+    // If current selection becomes invalid, switch to a valid one.
+    if (deliveryMethod === 'delivery' && !effectiveCanDelivery && effectiveCanPickup) {
+      setDeliveryMethod('pickup');
+      return;
+    }
+    if (deliveryMethod === 'pickup' && !effectiveCanPickup && effectiveCanDelivery) {
+      setDeliveryMethod('delivery');
+    }
+  }, [deliveryMethod, effectiveCanDelivery, effectiveCanPickup]);
+
   useEffect(() => {
     // Reload payment methods when user changes.
     setPaymentMethods(safeParseJson(localStorage.getItem(paymentStorageKey), []));
@@ -93,6 +116,44 @@ const Checkout = () => {
 
   const selectedPayment = paymentMethods.find((pm) => pm?.id === selectedPaymentId) || null;
   const paymentType = selectedPayment?.type || null;
+
+  useEffect(() => {
+    // If current selection becomes invalid for this cart, switch to a valid one.
+    const selectedType = paymentType;
+    const isSelectedAllowed =
+      selectedType === 'paypal'
+        ? effectiveCanPaypal
+        : selectedType === 'cash'
+          ? effectiveCanCash
+          : true;
+
+    if (selectedPaymentId && isSelectedAllowed) return;
+
+    const allowed = paymentMethods.filter((pm) =>
+      pm?.type === 'paypal' ? effectiveCanPaypal : pm?.type === 'cash' ? effectiveCanCash : true
+    );
+
+    if (allowed.length === 0) {
+      setSelectedPaymentId(null);
+      return;
+    }
+
+    const nextDefault = allowed.find((pm) => pm?.isDefault) || allowed[0];
+    setSelectedPaymentId(nextDefault?.id || null);
+  }, [effectiveCanPaypal, effectiveCanCash, paymentMethods, paymentType, selectedPaymentId]);
+
+  useEffect(() => {
+    // Keep the add-payment modal selection valid too.
+    setNewPayment((prev) => {
+      if (prev.type === 'paypal' && !effectiveCanPaypal && effectiveCanCash) {
+        return { ...prev, type: 'cash' };
+      }
+      if (prev.type === 'cash' && !effectiveCanCash && effectiveCanPaypal) {
+        return { ...prev, type: 'paypal' };
+      }
+      return prev;
+    });
+  }, [effectiveCanPaypal, effectiveCanCash]);
 
   useEffect(() => {
     if (!isDelivery) return;
@@ -125,6 +186,16 @@ const Checkout = () => {
     if (!selectedPayment) {
       toast.error('Agrega y selecciona un método de pago para continuar');
       setIsPaymentModalOpen(true);
+      return;
+    }
+
+    if (selectedPayment.type === 'paypal' && !effectiveCanPaypal) {
+      toast.error('Este carrito no permite pagar con PayPal');
+      return;
+    }
+
+    if (selectedPayment.type === 'cash' && !effectiveCanCash) {
+      toast.error('Este carrito no permite pagar en efectivo');
       return;
     }
 
@@ -199,12 +270,12 @@ const Checkout = () => {
             <p className="text-muted-foreground mb-8">
               Tu pedido ha sido registrado exitosamente. El emprendedor se pondrá en contacto contigo pronto.
             </p>
-            <div className="space-y-4">
-              <Button variant="hero" size="lg" onClick={() => navigate('/orders')}>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
+              <Button className="w-full sm:w-auto" variant="hero" size="lg" onClick={() => navigate('/orders')}>
                 <Package className="h-5 w-5" />
                 Ver Mis Pedidos
               </Button>
-              <Button variant="outline" size="lg" onClick={() => navigate('/catalog')}>
+              <Button className="w-full sm:w-auto" variant="outline" size="lg" onClick={() => navigate('/catalog')}>
                 Seguir Comprando
               </Button>
             </div>
@@ -215,6 +286,16 @@ const Checkout = () => {
   }
 
   const addPaymentMethod = () => {
+    if (newPayment.type === 'paypal' && !effectiveCanPaypal) {
+      toast.error('PayPal no está disponible para este carrito');
+      return;
+    }
+
+    if (newPayment.type === 'cash' && !effectiveCanCash) {
+      toast.error('Efectivo no está disponible para este carrito');
+      return;
+    }
+
     if (newPayment.type === 'paypal' && !newPayment.email?.trim()) {
       toast.error('Por favor ingresa el correo de PayPal');
       return;
@@ -266,8 +347,16 @@ const Checkout = () => {
                           type="button"
                           role="radio"
                           aria-checked={deliveryMethod === 'delivery'}
-                          onClick={() => setDeliveryMethod('delivery')}
+                          aria-disabled={!effectiveCanDelivery}
+                          disabled={!effectiveCanDelivery}
+                          onClick={() => {
+                            if (!effectiveCanDelivery) return;
+                            setDeliveryMethod('delivery');
+                          }}
                           className={`px-3 py-2 rounded-lg border text-sm transition-colors ${
+                            !effectiveCanDelivery
+                              ? 'border-border bg-muted/40 text-muted-foreground opacity-60 cursor-not-allowed'
+                              :
                             deliveryMethod === 'delivery'
                               ? 'border-primary bg-primary/5'
                               : 'border-border hover:border-primary/30'
@@ -279,8 +368,16 @@ const Checkout = () => {
                           type="button"
                           role="radio"
                           aria-checked={deliveryMethod === 'pickup'}
-                          onClick={() => setDeliveryMethod('pickup')}
+                          aria-disabled={!effectiveCanPickup}
+                          disabled={!effectiveCanPickup}
+                          onClick={() => {
+                            if (!effectiveCanPickup) return;
+                            setDeliveryMethod('pickup');
+                          }}
                           className={`px-3 py-2 rounded-lg border text-sm transition-colors ${
+                            !effectiveCanPickup
+                              ? 'border-border bg-muted/40 text-muted-foreground opacity-60 cursor-not-allowed'
+                              :
                             deliveryMethod === 'pickup'
                               ? 'border-primary bg-primary/5'
                               : 'border-border hover:border-primary/30'
@@ -294,6 +391,17 @@ const Checkout = () => {
                           ? 'El cliente retira el pedido (no requiere dirección).'
                           : 'Selecciona una dirección guardada o escribe una nueva.'}
                       </p>
+
+                      {!effectiveCanDelivery && (
+                        <p className="text-xs text-muted-foreground">
+                          Entrega no disponible: algún producto no acepta entrega.
+                        </p>
+                      )}
+                      {!effectiveCanPickup && (
+                        <p className="text-xs text-muted-foreground">
+                          Retiro no disponible: algún producto no acepta retiro.
+                        </p>
+                      )}
                     </div>
                   
                   <div className="grid sm:grid-cols-2 gap-4">
@@ -413,13 +521,24 @@ const Checkout = () => {
                   ) : (
                     <div className="space-y-3" role="radiogroup" aria-label="Método de pago">
                       {paymentMethods.map((pm) => (
+                        (() => {
+                          const isAllowed = pm.type === 'paypal' ? effectiveCanPaypal : pm.type === 'cash' ? effectiveCanCash : true;
+                          return (
                         <button
                           key={pm.id}
                           type="button"
                           role="radio"
                           aria-checked={selectedPaymentId === pm.id}
-                          onClick={() => setSelectedPaymentId(pm.id)}
+                          aria-disabled={!isAllowed}
+                          disabled={!isAllowed}
+                          onClick={() => {
+                            if (!isAllowed) return;
+                            setSelectedPaymentId(pm.id);
+                          }}
                           className={`w-full flex items-center gap-4 p-4 rounded-lg border-2 text-left transition-colors ${
+                            !isAllowed
+                              ? 'border-border bg-muted/40 text-muted-foreground opacity-60 cursor-not-allowed'
+                              :
                             selectedPaymentId === pm.id
                               ? 'border-primary bg-primary/5'
                               : 'border-border hover:border-primary/30'
@@ -461,6 +580,8 @@ const Checkout = () => {
                             </div>
                           </div>
                         </button>
+                          );
+                        })()
                       ))}
 
                       <div>
@@ -520,7 +641,16 @@ const Checkout = () => {
                     variant="hero"
                     size="lg"
                     className="w-full"
-                    disabled={isProcessing || paymentMethods.length === 0 || !selectedPaymentId}
+                    disabled={
+                      isProcessing ||
+                      paymentMethods.length === 0 ||
+                      !selectedPaymentId ||
+                      (paymentType === 'paypal'
+                        ? !effectiveCanPaypal
+                        : paymentType === 'cash'
+                          ? !effectiveCanCash
+                          : false)
+                    }
                   >
                     {isProcessing ? (
                       <>
@@ -565,10 +695,19 @@ const Checkout = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 type="button"
+                aria-disabled={!effectiveCanPaypal}
+                disabled={!effectiveCanPaypal}
                 className={`p-4 border rounded-lg text-center transition-colors ${
-                  newPayment.type === 'paypal' ? 'border-primary bg-primary/5' : 'hover:bg-muted'
+                  !effectiveCanPaypal
+                    ? 'opacity-60 cursor-not-allowed bg-muted/40'
+                    : newPayment.type === 'paypal'
+                      ? 'border-primary bg-primary/5'
+                      : 'hover:bg-muted'
                 }`}
-                onClick={() => setNewPayment((p) => ({ ...p, type: 'paypal' }))}
+                onClick={() => {
+                  if (!effectiveCanPaypal) return;
+                  setNewPayment((p) => ({ ...p, type: 'paypal' }));
+                }}
               >
                 <img
                   src="/PayPal-Symbol.png"
@@ -579,10 +718,19 @@ const Checkout = () => {
               </button>
               <button
                 type="button"
+                aria-disabled={!effectiveCanCash}
+                disabled={!effectiveCanCash}
                 className={`p-4 border rounded-lg text-center transition-colors ${
-                  newPayment.type === 'cash' ? 'border-primary bg-primary/5' : 'hover:bg-muted'
+                  !effectiveCanCash
+                    ? 'opacity-60 cursor-not-allowed bg-muted/40'
+                    : newPayment.type === 'cash'
+                      ? 'border-primary bg-primary/5'
+                      : 'hover:bg-muted'
                 }`}
-                onClick={() => setNewPayment((p) => ({ ...p, type: 'cash' }))}
+                onClick={() => {
+                  if (!effectiveCanCash) return;
+                  setNewPayment((p) => ({ ...p, type: 'cash' }));
+                }}
               >
                 <Banknote className="h-8 w-8 mx-auto mb-2 text-green-600" />
                 <p className="font-medium">Efectivo</p>

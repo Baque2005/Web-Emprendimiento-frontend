@@ -16,8 +16,8 @@ export const CTASection = () => {
           </div>
 
           <div className="relative grid lg:grid-cols-2 gap-8 items-center">
-            <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-white text-sm font-medium">
+            <div className="space-y-6 text-center lg:text-left flex flex-col items-center lg:items-start">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-white text-sm font-medium mx-auto lg:mx-0">
                 <Rocket className="h-4 w-4" />
                 ¿Eres estudiante emprendedor?
               </div>
@@ -26,12 +26,12 @@ export const CTASection = () => {
                 Registra tu negocio y llega a miles de usuarios
               </h2>
 
-              <p className="text-white/80 text-lg">
+              <p className="text-white/80 text-lg max-w-2xl mx-auto lg:mx-0">
                 Únete a la comunidad de emprendedores universitarios más grande de la 
                 Universidad de Guayaquil. Es gratis y solo toma 5 minutos.
               </p>
 
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
                 <Button
                   variant="accent"
                   size="lg"

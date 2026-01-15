@@ -106,6 +106,10 @@ export const mockProducts = [
     businessId: 'b1',
     stock: 50,
     featured: true,
+    acceptsDelivery: true,
+    acceptsPickup: true,
+    acceptsPaypal: true,
+    acceptsCash: true,
   },
   {
     id: 'p2',
@@ -116,6 +120,10 @@ export const mockProducts = [
     category: 'food',
     businessId: 'b1',
     stock: 30,
+    acceptsDelivery: true,
+    acceptsPickup: true,
+    acceptsPaypal: true,
+    acceptsCash: true,
   },
   {
     id: 'p3',
@@ -126,6 +134,10 @@ export const mockProducts = [
     category: 'food',
     businessId: 'b1',
     stock: 40,
+    acceptsDelivery: true,
+    acceptsPickup: true,
+    acceptsPaypal: true,
+    acceptsCash: true,
   },
   // Arte Manabita products
   {
@@ -138,6 +150,10 @@ export const mockProducts = [
     businessId: 'b2',
     stock: 25,
     featured: true,
+    acceptsDelivery: true,
+    acceptsPickup: true,
+    acceptsPaypal: true,
+    acceptsCash: true,
   },
   {
     id: 'p5',
@@ -148,6 +164,10 @@ export const mockProducts = [
     category: 'crafts',
     businessId: 'b2',
     stock: 10,
+    acceptsDelivery: true,
+    acceptsPickup: true,
+    acceptsPaypal: true,
+    acceptsCash: true,
   },
   {
     id: 'p6',
@@ -158,6 +178,10 @@ export const mockProducts = [
     category: 'crafts',
     businessId: 'b2',
     stock: 50,
+    acceptsDelivery: true,
+    acceptsPickup: true,
+    acceptsPaypal: true,
+    acceptsCash: true,
   },
   // TechUG products
   {
@@ -170,6 +194,10 @@ export const mockProducts = [
     businessId: 'b3',
     stock: 999,
     featured: true,
+    acceptsDelivery: true,
+    acceptsPickup: true,
+    acceptsPaypal: true,
+    acceptsCash: true,
   },
   {
     id: 'p8',
@@ -180,6 +208,10 @@ export const mockProducts = [
     category: 'tech',
     businessId: 'b3',
     stock: 15,
+    acceptsDelivery: true,
+    acceptsPickup: true,
+    acceptsPaypal: true,
+    acceptsCash: true,
   },
   // Moda Universitaria products
   {
@@ -192,6 +224,10 @@ export const mockProducts = [
     businessId: 'b4',
     stock: 30,
     featured: true,
+    acceptsDelivery: true,
+    acceptsPickup: true,
+    acceptsPaypal: true,
+    acceptsCash: true,
   },
   {
     id: 'p10',
@@ -202,6 +238,10 @@ export const mockProducts = [
     category: 'clothing',
     businessId: 'b4',
     stock: 12,
+    acceptsDelivery: true,
+    acceptsPickup: true,
+    acceptsPaypal: true,
+    acceptsCash: true,
   },
   {
     id: 'p11',
@@ -212,6 +252,10 @@ export const mockProducts = [
     category: 'clothing',
     businessId: 'b4',
     stock: 20,
+    acceptsDelivery: true,
+    acceptsPickup: true,
+    acceptsPaypal: true,
+    acceptsCash: true,
   },
 ];
 

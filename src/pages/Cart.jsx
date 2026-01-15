@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useApp } from '@/context/AppContext';
 import { toast } from 'sonner';
@@ -71,12 +72,43 @@ const Cart = () => {
                     onClick={() => navigate(`/product/${item.product.id}`)}
                   />
                   <div className="flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
                     <h3
                       className="font-semibold cursor-pointer hover:text-primary transition-colors"
                       onClick={() => navigate(`/product/${item.product.id}`)}
                     >
                       {item.product.name}
                     </h3>
+                      {(item.product?.acceptsDelivery !== false || item.product?.acceptsPickup !== false) && (
+                        <div className="flex flex-wrap gap-2">
+                          {item.product?.acceptsDelivery !== false && (
+                            <Badge variant="secondary" className="text-xs">
+                              Entrega
+                            </Badge>
+                          )}
+                          {item.product?.acceptsPickup !== false && (
+                            <Badge variant="secondary" className="text-xs">
+                              Retiro
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+
+                      {(item.product?.acceptsPaypal !== false || item.product?.acceptsCash !== false) && (
+                        <div className="flex flex-wrap gap-2">
+                          {item.product?.acceptsPaypal !== false && (
+                            <Badge variant="secondary" className="text-xs">
+                              PayPal
+                            </Badge>
+                          )}
+                          {item.product?.acceptsCash !== false && (
+                            <Badge variant="secondary" className="text-xs">
+                              Efectivo
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                    </div>
                     <p className="text-sm text-muted-foreground line-clamp-1">
                       {item.product.description}
                     </p>

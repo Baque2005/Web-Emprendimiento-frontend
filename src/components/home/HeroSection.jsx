@@ -17,8 +17,8 @@ export const HeroSection = () => {
       <div className="container relative">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Content */}
-          <div className="space-y-8 animate-slide-up">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent font-medium text-sm">
+          <div className="space-y-8 animate-slide-up text-center lg:text-left flex flex-col items-center lg:items-start">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent font-medium text-sm mx-auto lg:mx-0">
               <Sparkles className="h-4 w-4" />
               Plataforma Universitaria de Emprendimiento
             </div>
@@ -29,13 +29,13 @@ export const HeroSection = () => {
               universitario
             </h1>
 
-            <p className="text-lg text-muted-foreground max-w-lg">
+            <p className="text-lg text-muted-foreground max-w-lg mx-auto lg:mx-0">
               Conectamos a estudiantes emprendedores de la Universidad de Guayaquil 
               con toda la comunidad universitaria. Registra tu negocio, muestra tus 
               productos y crece junto a nosotros.
             </p>
 
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
               <Button
                 variant="hero"
                 size="xl"
@@ -55,7 +55,7 @@ export const HeroSection = () => {
             </div>
 
             {/* Stats */}
-            <div className="flex gap-8 pt-4">
+            <div className="flex gap-8 pt-4 justify-center lg:justify-start w-full">
               <div className="text-center">
                 <p className="text-3xl font-display font-bold text-primary">50+</p>
                 <p className="text-sm text-muted-foreground">Negocios</p>
@@ -72,18 +72,18 @@ export const HeroSection = () => {
           </div>
 
           {/* Hero Image/Illustration */}
-          <div className="relative hidden lg:block animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            <div className="relative z-10">
+          <div className="relative animate-fade-in mt-10 lg:mt-0" style={{ animationDelay: '0.2s' }}>
+            <div className="relative z-10 w-full max-w-md mx-auto lg:max-w-none">
               <img
                 src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=600&h=500&fit=crop"
                 alt="Estudiantes emprendedores"
-                className="rounded-2xl shadow-xl"
+                className="w-full rounded-2xl shadow-xl object-cover"
               />
               
               {/* Floating cards */}
-              <div className="absolute -left-8 top-1/4 bg-card p-4 rounded-xl shadow-lg animate-float">
+              <div className="absolute -left-4 top-0 bg-card p-3 sm:p-4 rounded-xl shadow-lg animate-float scale-[0.92] sm:scale-100 sm:-left-8 sm:top-1/4">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-success/20 flex items-center justify-center">
+                  <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-success/20 flex items-center justify-center">
                     <Store className="h-5 w-5 text-success" />
                   </div>
                   <div>
@@ -93,9 +93,9 @@ export const HeroSection = () => {
                 </div>
               </div>
 
-              <div className="absolute -right-8 bottom-1/4 bg-card p-4 rounded-xl shadow-lg animate-float" style={{ animationDelay: '1s' }}>
+              <div className="absolute -right-4 bottom-0 bg-card p-3 sm:p-4 rounded-xl shadow-lg animate-float scale-[0.92] sm:scale-100 sm:-right-8 sm:bottom-1/4" style={{ animationDelay: '1s' }}>
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-accent/20 flex items-center justify-center">
+                  <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-accent/20 flex items-center justify-center">
                     <Users className="h-5 w-5 text-accent" />
                   </div>
                   <div>

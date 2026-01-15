@@ -3,11 +3,20 @@ import { Layout } from '@/components/layout/Layout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useApp } from '@/context/AppContext';
-import { Package, ArrowLeft, ShoppingBag, Store, MapPin } from 'lucide-react';
+import { Package, ArrowLeft, ShoppingBag, Store, MapPin, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const Orders = () => {
   const navigate = useNavigate();
-  const { orders, products, businesses } = useApp();
+  const { orders, products, businesses, deleteOrder } = useApp();
+
+  const handleDeleteOrder = (order) => {
+    if (!order?.id) return;
+    const ok = window.confirm(`¿Eliminar la orden #${order.id.slice(-6).toUpperCase()}? Esta acción no se puede deshacer.`);
+    if (!ok) return;
+    deleteOrder(order.id);
+    toast.success('Orden eliminada');
+  };
 
   // Quita anotaciones de tipo TypeScript en parámetros
   const getStatusBadge = (status) => {
@@ -86,6 +95,16 @@ const Orders = () => {
                               })}
                             </p>
                           </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Eliminar orden"
+                            title="Eliminar orden"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => handleDeleteOrder(order)}
+                          >
+                            <Trash2 className="h-5 w-5" />
+                          </Button>
                         </div>
 
                         {business && (
